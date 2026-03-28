@@ -20,11 +20,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.Avatar) {
       window.Avatar.setState("thinking");
     }
-    beginBuildFlow(text);
+    beginPlanRequest(text);
   };
 
-  Chat.onRequestSuccess = ({ speech }) => {
-    moveBuildFlowForward(speech);
+  Chat.onRequestSuccess = ({ response, speech }) => {
+    syncTaskPlanFromResponse(response, speech);
   };
 
   Chat.onRequestError = () => {
@@ -34,12 +34,12 @@ document.addEventListener("DOMContentLoaded", () => {
     BuildState.update({
       avatarState: "idle",
       buildStatus: "Something went wrong. Try again.",
-      activeStepId: BuildState.state.steps.length ? "vision" : null,
+      activeStepId: BuildState.state.steps[0]?.id || null,
     });
     if (BuildState.state.steps.length) {
-      BuildState.updateStep("vision", {
+      BuildState.updateStep(BuildState.state.steps[0].id, {
         status: "active",
-        progress: 20,
+        progress: 0,
         detail: "Let's try that one more time.",
       });
     }
@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     BuildState.update({
       avatarState: "speaking",
-      buildStatus: "Explaining the build",
+      buildStatus: BuildState.state.steps.length ? BuildState.state.buildStatus : "Explaining the plan",
     });
   };
 
@@ -79,15 +79,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     BuildState.update({
       avatarState: "idle",
-      buildStatus: "Ready for the next idea",
+      buildStatus: BuildState.state.buildStatus,
     });
-    if (BuildState.state.steps.length) {
-      BuildState.updateStep("gameplay", {
-        status: "done",
-        progress: 100,
-        detail: "Everything is ready to show.",
-      });
-    }
   };
 
   const micBtn = document.getElementById("mic-btn");
@@ -128,61 +121,72 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("Archie app initialized");
 });
 
-function beginBuildFlow(text) {
-  BuildState.reset();
-  const steps = BuildState.createStepsFromPrompt(text);
+function beginPlanRequest(text) {
+  if (!BuildState.state.steps.length) {
+    BuildState.reset();
+  }
   BuildState.update({
     avatarState: "thinking",
-    activeStepId: "vision",
-    buildStatus: "Planning the build",
-    steps,
-  });
-  BuildState.updateStep("vision", {
-    status: "active",
-    progress: 42,
-    detail: `Thinking about ${summarizeTopic(text)}.`,
-  });
-  BuildState.updateStep("world", {
-    status: "upcoming",
-    progress: 0,
-    detail: "",
-  });
-  BuildState.updateStep("encounters", {
-    status: "upcoming",
-    progress: 0,
-    detail: "",
-  });
-  BuildState.updateStep("gameplay", {
-    status: "upcoming",
-    progress: 0,
-    detail: "",
+    buildStatus: `Planning ${summarizeTopic(text)}...`,
   });
 }
 
-function moveBuildFlowForward(speech) {
-  BuildState.update({
-    activeStepId: "encounters",
-    buildStatus: "Building the preview",
-  });
-  BuildState.updateStep("vision", {
-    status: "done",
-    progress: 100,
-    detail: "The idea is locked in.",
-  });
-  BuildState.updateStep("world", {
-    status: "done",
-    progress: 100,
-    detail: "The world is set up.",
-  });
-  BuildState.updateStep("encounters", {
-    status: "active",
-    progress: 76,
-    detail: clipDetail(speech, "Adding the main pieces now."),
-  });
-  BuildState.updateStep("gameplay", {
-    status: "active",
-    progress: 48,
-    detail: "Wrapping up the final details.",
+function syncTaskPlanFromResponse(response, speech) {
+  const taskPlan = response?.taskPlan || [];
+  const planStatus = response?.plan?.status || null;
+
+  if (!taskPlan.length) {
+    BuildState.update({
+      avatarState: "idle",
+      buildStatus: speech ? clipDetail(speech, "Ready for the next idea") : "Ready for the next idea",
+    });
+    return;
+  }
+
+  const steps = taskPlan.map((step) => ({ ...step }));
+  const firstStepId = steps[0]?.id || null;
+
+  if (planStatus === "waiting_approval") {
+    steps[0] = {
+      ...steps[0],
+      status: "active",
+      progress: 5,
+      detail: "Plan ready. Say go when it looks right.",
+    };
+
+    BuildState.setTaskPlan(steps, {
+      avatarState: "idle",
+      activeStepId: firstStepId,
+      buildStatus: "Plan ready to review",
+    });
+    return;
+  }
+
+  if (planStatus === "building") {
+    steps.forEach((step, index) => {
+      if (index === 0) {
+        step.status = "done";
+        step.progress = 100;
+        step.detail = "The plan is locked in.";
+      } else if (index === 1) {
+        step.status = "active";
+        step.progress = 24;
+        step.detail = clipDetail(speech, step.detail);
+      }
+    });
+
+    BuildState.setTaskPlan(steps, {
+      avatarState: "idle",
+      activeStepId: steps[1]?.id || firstStepId,
+      buildStatus: "Building the game",
+    });
+    return;
+  }
+
+  BuildState.setTaskPlan(steps, {
+    avatarState: "idle",
+    activeStepId: firstStepId,
+    buildStatus: "Tracking the build",
   });
 }
 

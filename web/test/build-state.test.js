@@ -3,7 +3,6 @@ const assert = require("node:assert/strict");
 
 const {
   createBuildState,
-  createStepsFromPrompt,
 } = require("../public/js/build-state.js");
 
 test("initial state starts empty before a project prompt", () => {
@@ -15,33 +14,57 @@ test("initial state starts empty before a project prompt", () => {
   assert.equal(state.state.buildStatus, "Tell Archie what to build");
 });
 
-test("createStepsFromPrompt returns a richer project-specific task list", () => {
-  const steps = createStepsFromPrompt("make a spooky zombie survival game");
-
-  assert.deepEqual(
-    steps.map((step) => step.id),
-    ["vision", "world", "encounters", "gameplay"]
-  );
-  assert.deepEqual(
-    steps.map((step) => step.label),
-    [
-      "Mapping the survival loop",
-      "Shaping the spooky world",
-      "Staging zombies and set pieces",
-      "Wiring scares and win states",
-    ]
-  );
-  assert.match(steps[0].detail, /spooky zombie survival game/i);
-});
-
-test("updateStep changes one prompt-generated step and recalculates overall progress", () => {
+test("setTaskPlan clones task steps and recalculates overall progress", () => {
   const state = createBuildState();
-  state.update({
-    activeStepId: "vision",
-    steps: createStepsFromPrompt("make a racing game"),
+  const steps = [
+    {
+      id: "review-plan",
+      label: "Review Haunted House",
+      progress: 5,
+      status: "active",
+      detail: "Review the core loop.",
+    },
+    {
+      id: "build-world",
+      label: "Build the world",
+      progress: 0,
+      status: "upcoming",
+      detail: "Nighttime, heavy fog.",
+    },
+  ];
+
+  state.setTaskPlan(steps, {
+    activeStepId: "review-plan",
+    buildStatus: "Plan ready to review",
   });
 
-  state.updateStep("vision", {
+  assert.equal(state.state.activeStepId, "review-plan");
+  assert.equal(state.state.buildStatus, "Plan ready to review");
+  assert.equal(state.state.overallProgress, 2.5);
+  assert.notEqual(state.state.steps, steps);
+  assert.equal(state.state.steps[0].label, "Review Haunted House");
+});
+
+test("updateStep changes one server-generated step and recalculates overall progress", () => {
+  const state = createBuildState();
+  state.setTaskPlan([
+    {
+      id: "review-plan",
+      label: "Review Street Racer",
+      progress: 5,
+      status: "active",
+      detail: "Review the plan.",
+    },
+    {
+      id: "script-gameplay",
+      label: "Script gameplay",
+      progress: 0,
+      status: "upcoming",
+      detail: "Drive the car around the track.",
+    },
+  ]);
+
+  state.updateStep("review-plan", {
     status: "done",
     progress: 100,
     detail: "Ready",
@@ -49,19 +72,27 @@ test("updateStep changes one prompt-generated step and recalculates overall prog
 
   assert.equal(state.state.steps[0].status, "done");
   assert.equal(state.state.steps[0].detail, "Ready");
-  assert.equal(state.state.overallProgress, 25);
+  assert.equal(state.state.overallProgress, 50);
 });
 
 test("reset returns the state to the pre-project values", () => {
   const state = createBuildState();
 
+  state.setTaskPlan([
+    {
+      id: "place-objects",
+      label: "Place key objects",
+      progress: 0,
+      status: "upcoming",
+      detail: "Castle, lava, checkpoints.",
+    },
+  ]);
   state.update({
     avatarState: "speaking",
     buildStatus: "Working",
-    activeStepId: "encounters",
-    steps: createStepsFromPrompt("make a castle obby"),
+    activeStepId: "place-objects",
   });
-  state.updateStep("encounters", {
+  state.updateStep("place-objects", {
     status: "active",
     progress: 80,
     detail: "Adding props",

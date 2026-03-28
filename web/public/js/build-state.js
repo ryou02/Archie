@@ -1,72 +1,5 @@
-const STEP_BLUEPRINTS = {
-  spooky: {
-    vision: "Mapping the survival loop",
-    world: "Shaping the spooky world",
-    encounters: "Staging zombies and set pieces",
-    gameplay: "Wiring scares and win states",
-  },
-  default: {
-    vision: "Mapping the game loop",
-    world: "Shaping the world",
-    encounters: "Staging characters and set pieces",
-    gameplay: "Wiring gameplay and polish",
-  },
-};
-
-function summarizePrompt(text) {
-  const cleaned = (text || "").trim().replace(/\s+/g, " ");
-
-  if (!cleaned) {
-    return "your game idea";
-  }
-
-  return cleaned.length > 54 ? `${cleaned.slice(0, 54).trim()}...` : cleaned;
-}
-
-function pickBlueprint(prompt) {
-  const normalized = (prompt || "").toLowerCase();
-
-  if (/(spooky|scary|haunted|horror|zombie|ghost|monster)/.test(normalized)) {
-    return STEP_BLUEPRINTS.spooky;
-  }
-
-  return STEP_BLUEPRINTS.default;
-}
-
-function createStepsFromPrompt(prompt) {
-  const blueprint = pickBlueprint(prompt);
-  const topic = summarizePrompt(prompt);
-
-  return [
-    {
-      id: "vision",
-      label: blueprint.vision,
-      progress: 0,
-      status: "upcoming",
-      detail: `Locking in ${topic}.`,
-    },
-    {
-      id: "world",
-      label: blueprint.world,
-      progress: 0,
-      status: "upcoming",
-      detail: "",
-    },
-    {
-      id: "encounters",
-      label: blueprint.encounters,
-      progress: 0,
-      status: "upcoming",
-      detail: "",
-    },
-    {
-      id: "gameplay",
-      label: blueprint.gameplay,
-      progress: 0,
-      status: "upcoming",
-      detail: "",
-    },
-  ];
+function cloneSteps(steps) {
+  return (steps || []).map((step) => ({ ...step }));
 }
 
 function createBaseState() {
@@ -99,8 +32,18 @@ function createBuildState() {
       this.notify();
     },
 
-    createStepsFromPrompt(prompt) {
-      return createStepsFromPrompt(prompt);
+    setTaskPlan(steps, patch = {}) {
+      const nextSteps = cloneSteps(steps);
+      const overallProgress =
+        nextSteps.length > 0
+          ? nextSteps.reduce((sum, step) => sum + step.progress, 0) / nextSteps.length
+          : 0;
+
+      this.update({
+        steps: nextSteps,
+        overallProgress,
+        ...patch,
+      });
     },
 
     updateStep(stepId, stepPatch) {
@@ -132,6 +75,5 @@ if (typeof module !== "undefined") {
   module.exports = {
     BuildState,
     createBuildState,
-    createStepsFromPrompt,
   };
 }

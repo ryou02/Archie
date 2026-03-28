@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const Anthropic = require("@anthropic-ai/sdk");
 const { TOOL_DEFINITIONS } = require("./tools.js");
+const { buildTaskPlan, parsePlanFromSpeech } = require("./task-plan.js");
 
 const anthropic = new Anthropic();
 
@@ -319,11 +320,13 @@ app.get("/status", (req, res) => {
 
 // --- Game Plan State ---
 let currentPlan = null; // { name, world, objects, gameplay, audio, status }
+let currentTaskPlan = [];
 
 // Start endpoint — Archie greets the user
 app.post("/start", async (req, res) => {
   conversationHistory = [];
   currentPlan = null;
+  currentTaskPlan = [];
   try {
     const result = await agentLoop("Hi! I just opened Roblox Studio and I want to make a game.");
     res.json(result);
@@ -335,13 +338,14 @@ app.post("/start", async (req, res) => {
 
 // Get current plan
 app.get("/plan", (req, res) => {
-  res.json({ plan: currentPlan });
+  res.json({ plan: currentPlan, taskPlan: currentTaskPlan });
 });
 
 // Reset conversation history
 app.post("/reset", (req, res) => {
   conversationHistory = [];
   currentPlan = null;
+  currentTaskPlan = [];
   res.json({ success: true });
 });
 
@@ -420,28 +424,11 @@ async function agentLoop(userMessage) {
         const textBlock = response.content.find((b) => b.type === "text");
         const speech = textBlock ? textBlock.text : "Done!";
 
-        // Try to extract a game plan from the response
-        if (speech.includes("World:") && speech.includes("Main Objects:") && speech.includes("Gameplay:")) {
-          try {
-            const lines = speech.split("\n").map(l => l.trim()).filter(Boolean);
-            const worldIdx = lines.findIndex(l => l.startsWith("World:"));
-            const nameMatch = worldIdx > 0 ? { 1: lines[worldIdx - 1] } : null;
-            const worldMatch = speech.match(/World:\s*(.+)/);
-            const objectsMatch = speech.match(/Main Objects:\s*(.+)/);
-            const gameplayMatch = speech.match(/Gameplay:\s*(.+)/);
-            const audioMatch = speech.match(/Audio:\s*(.+)/);
-            currentPlan = {
-              name: nameMatch ? nameMatch[1] : "Untitled Game",
-              world: worldMatch ? worldMatch[1] : "",
-              objects: objectsMatch ? objectsMatch[1] : "",
-              gameplay: gameplayMatch ? gameplayMatch[1] : "",
-              audio: audioMatch ? audioMatch[1] : "",
-              status: "waiting_approval",
-            };
-            console.log("[plan] Saved plan:", currentPlan.name);
-          } catch (e) {
-            console.error("[plan] Failed to parse plan:", e);
-          }
+        const parsedPlan = parsePlanFromSpeech(speech);
+        if (parsedPlan) {
+          currentPlan = parsedPlan;
+          currentTaskPlan = buildTaskPlan(parsedPlan);
+          console.log("[plan] Saved plan:", currentPlan.name);
         }
 
         // Update plan status when building starts
@@ -449,7 +436,7 @@ async function agentLoop(userMessage) {
           currentPlan.status = "building";
         }
 
-        return { speech, plan: currentPlan };
+        return { speech, plan: currentPlan, taskPlan: currentTaskPlan };
       }
 
       // If Claude wants to use tools, execute them
@@ -497,7 +484,11 @@ async function agentLoop(userMessage) {
     }
 
     if (currentPlan) currentPlan.status = "complete";
-    return { speech: "Whew, that was a lot! Let me know what's next.", plan: currentPlan };
+    return {
+      speech: "Whew, that was a lot! Let me know what's next.",
+      plan: currentPlan,
+      taskPlan: currentTaskPlan,
+    };
   } catch (err) {
     // Roll back conversation history to prevent corrupted state
     conversationHistory.length = historyLengthBefore;
