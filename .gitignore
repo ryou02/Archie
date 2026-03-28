@@ -7,12 +7,14 @@
 
 sourcemap.json
 
+
 # Environment variables
 web/.env
 
 # Claude/AI files
 .claude/
 docs/superpowers/
+CLAUDE.md
 
 # Node
 web/node_modules/

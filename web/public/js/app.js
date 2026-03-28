@@ -13,9 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
   VoiceOutput.init();
 
   // When Archie responds, speak it
-  Chat.onArchieResponse = (response) => {
-    if (response.speech) {
-      VoiceOutput.speak(response.speech);
+  Chat.onArchieResponse = (speech) => {
+    if (speech) {
+      VoiceOutput.speak(speech);
     }
   };
 

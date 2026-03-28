@@ -28,11 +28,11 @@ const Chat = {
 
     try {
       const response = await Api.sendMessage(text, this.history);
-      this.addMessage("assistant", response.speech || "...");
+      const speech = response.speech || "Done!";
+      this.addMessage("assistant", speech);
 
-      // Trigger TTS if available (wired in app.js)
       if (this.onArchieResponse) {
-        this.onArchieResponse(response);
+        this.onArchieResponse(speech);
       }
     } catch (err) {
       this.addMessage("assistant", "Oops, something went wrong!");
