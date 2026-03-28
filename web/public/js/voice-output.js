@@ -2,6 +2,10 @@ const VoiceOutput = {
   audioContext: null,
   analyser: null,
   isSpeaking: false,
+  energy: 0,
+  onSpeechStart: null,
+  onSpeechEnd: null,
+  onSpeechEnergy: null,
 
   init() {
     this.audioContext = new (window.AudioContext ||
@@ -40,12 +44,23 @@ const VoiceOutput = {
 
       // Start lip-sync monitoring
       this.isSpeaking = true;
+      this.energy = 0;
+      if (this.onSpeechStart) {
+        this.onSpeechStart();
+      }
       this.monitorLipSync();
 
       source.onended = () => {
         this.isSpeaking = false;
+        this.energy = 0;
         if (window.Avatar) {
           window.Avatar.setMouthOpen(0);
+        }
+        if (this.onSpeechEnergy) {
+          this.onSpeechEnergy(0);
+        }
+        if (this.onSpeechEnd) {
+          this.onSpeechEnd();
         }
       };
     } catch (err) {
@@ -63,9 +78,14 @@ const VoiceOutput = {
     const avg =
       dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
     const mouthOpen = Math.min(avg / 128, 1);
+    this.energy = this.energy * 0.72 + mouthOpen * 0.28;
 
     if (window.Avatar) {
-      window.Avatar.setMouthOpen(mouthOpen);
+      window.Avatar.setSpeechEnergy(this.energy);
+    }
+
+    if (this.onSpeechEnergy) {
+      this.onSpeechEnergy(this.energy);
     }
 
     requestAnimationFrame(() => this.monitorLipSync());
