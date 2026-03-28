@@ -550,7 +550,7 @@ async function agentLoop(userMessage) {
 
       const response = await anthropic.messages.create({
         model: "claude-opus-4-6",
-        max_tokens: 1024,
+        max_tokens: 4096,
         system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
         tools: cachedTools,
         messages: trimmedMessages,
