@@ -9,3 +9,13 @@ sourcemap.json
 
 # Environment variables
 web/.env
+
+# Claude/AI files
+.claude/
+docs/superpowers/
+
+# Node
+web/node_modules/
+
+# Plugin build output
+plugin/*.rbxm
