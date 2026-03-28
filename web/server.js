@@ -172,11 +172,18 @@ async function agentLoop(userMessage) {
     while (iterations < MAX_ITERATIONS) {
       iterations++;
 
+      // Mark system prompt and last tool for caching — saves ~90% on repeated input tokens
+      const cachedTools = TOOL_DEFINITIONS.map((tool, i) =>
+        i === TOOL_DEFINITIONS.length - 1
+          ? { ...tool, cache_control: { type: "ephemeral" } }
+          : tool
+      );
+
       const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-opus-4-6",
         max_tokens: 4096,
-        system: SYSTEM_PROMPT,
-        tools: TOOL_DEFINITIONS,
+        system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+        tools: cachedTools,
         messages: conversationHistory,
       });
 
