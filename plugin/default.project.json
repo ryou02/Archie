@@ -1,0 +1,7 @@
+{
+  "name": "ArchiePlugin",
+  "tree": {
+    "$className": "Script",
+    "$path": "init.server.luau"
+  }
+}
