@@ -177,6 +177,27 @@ NPC that chases player:
     task.wait(0.5)
   end
 
+GUI (health bar, score display, ammo counter, etc.) — use run_code to create ScreenGui:
+  -- Put this in a LocalScript in StarterPlayerScripts
+  local player = game.Players.LocalPlayer
+  local gui = Instance.new("ScreenGui")
+  gui.Parent = player.PlayerGui
+  local label = Instance.new("TextLabel")
+  label.Size = UDim2.new(0, 200, 0, 50)
+  label.Position = UDim2.new(0.5, -100, 0, 10)
+  label.BackgroundTransparency = 0.5
+  label.BackgroundColor3 = Color3.new(0, 0, 0)
+  label.TextColor3 = Color3.new(1, 1, 1)
+  label.Font = Enum.Font.GothamBold
+  label.TextSize = 24
+  label.Text = "Score: 0"
+  label.Parent = gui
+
+Give guns to player (put Tools in StarterPack so players spawn with them):
+  -- After creating a Tool with a Handle, move it to StarterPack
+  local tool = ServerStorage:FindFirstChild("Pistol")
+  if tool then tool.Parent = game.StarterPack end
+
 STEP 7: VERIFY — TEST THE GAME
 This step is critical. NEVER skip it. Before telling the user the game is done:
 1. get_scene_summary — check every object is above ground (Y > 0), nothing overlapping badly
@@ -477,10 +498,23 @@ async function agentLoop(userMessage) {
 
       // Cap conversation history — keep first 2 messages (greeting context) + last 30
       // This prevents unbounded growth in long sessions
+      // IMPORTANT: Never split between an assistant tool_use message and its tool_result reply
       const MAX_HISTORY = 30;
       if (conversationHistory.length > MAX_HISTORY + 2) {
+        let cutPoint = conversationHistory.length - MAX_HISTORY;
+        // Make sure we don't cut right before a tool_result message (user message with tool_result blocks)
+        // If the message at cutPoint is a user message with tool_results, move cut back one more
+        // so we include the assistant tool_use message that precedes it
+        while (cutPoint > 2 && cutPoint < conversationHistory.length) {
+          const msg = conversationHistory[cutPoint];
+          if (msg.role === "user" && Array.isArray(msg.content) && msg.content.some(b => b.type === "tool_result")) {
+            cutPoint--;
+          } else {
+            break;
+          }
+        }
         const first2 = conversationHistory.slice(0, 2);
-        const recent = conversationHistory.slice(-MAX_HISTORY);
+        const recent = conversationHistory.slice(cutPoint);
         conversationHistory.length = 0;
         conversationHistory.push(...first2, ...recent);
       }
