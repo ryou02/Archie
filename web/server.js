@@ -99,6 +99,9 @@ When everything works, tell the user what you built and ask if they want changes
 ASSET RULES:
 - NEVER use run_code or create_instance to build objects without calling search_toolbox first
 - ONLY fall back to run_code if search_toolbox returns 0 results
+- search_toolbox results are sorted by safety score. Always prefer assets from verified creators with high approval ratings.
+- If an asset has many scripts (5+), be cautious — prefer simpler alternatives when available.
+- Never insert an asset with less than 40% approval rating.
 
 POSITIONING RULES:
 - Place the main structure at center: "0,0,0"
@@ -201,15 +204,65 @@ async function handleSearchToolbox(params) {
     const detailsData = await detailsRes.json();
     const detailsMap = new Map();
     for (const item of detailsData.data || []) {
-      detailsMap.set(item.asset?.id, item.asset?.name || "Unknown");
+      const asset = item.asset || {};
+      const creator = item.creator || {};
+      const voting = item.voting || {};
+      const upVotes = voting.upVotes || 0;
+      const downVotes = voting.downVotes || 0;
+      const totalVotes = upVotes + downVotes;
+      const approvalPercent = totalVotes > 0 ? Math.round((upVotes / totalVotes) * 100) : 0;
+
+      detailsMap.set(asset.id, {
+        name: asset.name || "Unknown",
+        creatorName: creator.name || "Unknown",
+        isVerifiedCreator: creator.isVerifiedCreator || false,
+        hasScripts: asset.hasScripts || false,
+        scriptCount: asset.scriptCount || 0,
+        upVotes,
+        downVotes,
+        approvalPercent,
+      });
     }
 
-    const results = ids.map((id) => ({
-      assetId: id,
-      name: detailsMap.get(id) || "Unknown",
-    }));
+    // Score and sort results — prefer verified creators, high approval, fewer scripts
+    let results = ids.map((id) => {
+      const info = detailsMap.get(id) || { name: "Unknown", creatorName: "Unknown", isVerifiedCreator: false, hasScripts: false, scriptCount: 0, upVotes: 0, downVotes: 0, approvalPercent: 0 };
+      let safetyScore = 0;
+      if (info.isVerifiedCreator) safetyScore += 50;
+      if (info.approvalPercent >= 80) safetyScore += 30;
+      else if (info.approvalPercent >= 60) safetyScore += 15;
+      if (info.upVotes >= 100) safetyScore += 20;
+      else if (info.upVotes >= 10) safetyScore += 10;
+      // Penalize high script counts (potential risk)
+      if (info.scriptCount > 5) safetyScore -= 20;
 
-    console.log(`[search_toolbox] "${params.query}" → ${results.length} results:`, results.map(r => `${r.name} (${r.assetId})`).join(", "));
+      return {
+        assetId: id,
+        name: info.name,
+        creator: info.creatorName,
+        verified: info.isVerifiedCreator,
+        approval: `${info.approvalPercent}%`,
+        votes: info.upVotes,
+        scripts: info.scriptCount,
+        safetyScore,
+      };
+    });
+
+    // Sort by safety score (highest first)
+    results.sort((a, b) => b.safetyScore - a.safetyScore);
+
+    // Filter out assets with very low approval
+    results = results.filter((r) => {
+      const pct = parseInt(r.approval);
+      // Only filter if there are enough votes to be meaningful
+      if (r.votes + (r.votes > 0 ? r.votes * ((100 - pct) / pct) : 0) > 20 && pct < 40) {
+        console.log(`[safety] Filtered out "${r.name}" (${r.assetId}) — ${r.approval} approval`);
+        return false;
+      }
+      return true;
+    });
+
+    console.log(`[search_toolbox] "${params.query}" → ${results.length} results:`, results.map(r => `${r.name} (${r.assetId}) ${r.verified ? "✓" : "✗"} ${r.approval}`).join(", "));
     return { result: { results } };
   } catch (err) {
     console.error("Toolbox search error:", err);
