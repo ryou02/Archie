@@ -164,8 +164,9 @@ button {
 
 #activity-rail {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(180px, 1fr);
   gap: 14px;
+  overflow: hidden;
 }
 
 #progress-card,
@@ -208,6 +209,8 @@ button {
 #task-panel {
   display: grid;
   gap: 12px;
+  max-height: 40vh;
+  overflow-y: auto;
 }
 
 .task-step {

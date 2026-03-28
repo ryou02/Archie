@@ -1,10 +1,17 @@
 const Api = {
   async sendMessage(text, history) {
-    const res = await fetch("/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, history }),
-    });
-    return res.json();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000); // 2 min timeout
+    try {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history }),
+        signal: controller.signal,
+      });
+      return res.json();
+    } finally {
+      clearTimeout(timeout);
+    }
   },
 };
