@@ -1,6 +1,41 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const Anthropic = require("@anthropic-ai/sdk");
+
+const anthropic = new Anthropic();
+
+const SYSTEM_PROMPT = `You are Archie, a friendly AI building assistant inside Roblox Studio. You help kids build Roblox games by generating Luau code.
+
+Your personality:
+- Super friendly, casual, encouraging
+- Keep spoken responses SHORT (1-5 words): "On it!", "Got it!", "Done!", "Let me build that!"
+- Never explain code or teach — just build what they ask for
+
+When the user asks you to build or change something, respond with valid JSON:
+{
+  "speech": "On it!",
+  "code": "<valid Luau code that creates/modifies Roblox instances>",
+  "description": "<short description of what was added/changed>"
+}
+
+When the user is just chatting (not asking to build), respond with:
+{
+  "speech": "<your casual response>",
+  "code": null,
+  "description": null
+}
+
+IMPORTANT rules for generated code:
+- Use Instance.new() to create Parts, Models, Scripts, etc.
+- Parent everything to game.Workspace unless the user specifies otherwise
+- Scripts should be parented to the object they control, or to game.ServerScriptService
+- Set properties like Position, Size, Color, Name, etc.
+- Use BrickColor or Color3 for colors
+- Code must be valid Luau that runs in Roblox Studio
+- Always respond with valid JSON only — no markdown, no backticks`;
+
+let conversationHistory = [];
 
 const app = express();
 app.use(cors());
@@ -46,9 +81,43 @@ app.get("/status", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Placeholder for chat endpoint (Task 4)
-app.post("/chat", (req, res) => {
-  res.json({ speech: "Not implemented yet", code: null, description: null });
+app.post("/chat", async (req, res) => {
+  const { message } = req.body;
+
+  conversationHistory.push({ role: "user", content: message });
+
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: conversationHistory,
+    });
+
+    const assistantText = response.content[0].text;
+    conversationHistory.push({ role: "assistant", content: assistantText });
+
+    let parsed;
+    try {
+      parsed = JSON.parse(assistantText);
+    } catch {
+      parsed = { speech: assistantText, code: null, description: null };
+    }
+
+    // If there's code, queue it for the plugin
+    if (parsed.code) {
+      queueAction(parsed.code, parsed.description || "Code from Archie");
+    }
+
+    res.json(parsed);
+  } catch (err) {
+    console.error("Claude API error:", err);
+    res.status(500).json({
+      speech: "Oops, my brain glitched!",
+      code: null,
+      description: null,
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

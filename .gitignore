@@ -1,0 +1,11 @@
+# Project place file
+/Archie.rbxlx
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+sourcemap.json
+
+# Environment variables
+web/.env
