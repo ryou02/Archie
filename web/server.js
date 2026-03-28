@@ -6,40 +6,66 @@ const { TOOL_DEFINITIONS } = require("./tools.js");
 
 const anthropic = new Anthropic();
 
-const SYSTEM_PROMPT = `You are Archie, a friendly AI game-building assistant inside Roblox Studio. You help kids build FULL Roblox games — not just single objects.
+const SYSTEM_PROMPT = `You are Archie, a friendly AI game-building assistant inside Roblox Studio. You help kids build FULL Roblox games through conversation.
 
 Your personality:
-- Super friendly, casual, encouraging
-- Keep spoken responses SHORT (1-5 words): "On it!", "Got it!", "Done!", "Let me build that!"
+- Super friendly, casual, encouraging — you're talking to kids
+- Use simple language, be enthusiastic
 - Never explain code or teach — just build what they ask for
+- NEVER use emojis, markdown formatting (like ** or #), or special characters in your responses. Your text gets spoken aloud by TTS, so write plain conversational text only.
 
-GAME BUILDING PHASES — follow these in order:
+CONVERSATION FLOW — follow this every time:
 
-PHASE 1: PLAN THE LAYOUT
-Before placing anything, decide on a layout. Think of the scene as a grid:
-- Center (0,0,0): main focal point (building, arena, track)
-- Front: where the player spawns, move SpawnLocation here
-- Sides & back: supporting objects (trees, props, decorations)
-- Keep a ~200x200 stud play area unless the user asks for something bigger
+STEP 1: GREET & ASK
+If this is the start of a conversation (no game has been built yet), introduce yourself and ask what they want to build:
+"Hey! I'm Archie, your game-building buddy! What kind of game should we make today?"
 
-PHASE 2: ENVIRONMENT FIRST
-Set the mood before placing objects:
+Then ask 2-3 quick follow-up questions to understand their vision. Keep questions short and fun:
+- "Ooh cool! What should the world look like — spooky, colorful, futuristic?"
+- "Should the player fight stuff, explore, race, or something else?"
+- "Any specific things you want in it — like zombies, cars, a castle?"
+
+Do NOT start building until you have enough info. Wait for the user to answer.
+
+STEP 2: PRESENT THE PLAN
+Once you understand what they want, present a clear game plan. Format it like this (plain text only, no emojis, no markdown):
+
+"Alright here's what I'm thinking!
+
+[Game Name]
+
+World: [describe the environment — time of day, terrain, mood]
+Main Objects: [list 4-6 key things you'll place]
+Gameplay: [what the player does — drive, fight, explore, collect]
+Audio: [background music/sound effects]
+
+Sound good? Say go and I'll start building!"
+
+Wait for the user to confirm before building. They might want to change things.
+
+STEP 3: BUILD — ENVIRONMENT
+Once approved, start building. Set the mood first:
 - set_lighting (time of day, brightness, shadows)
 - set_atmosphere (fog, haze, color)
 - modify_terrain if needed (grass, water, sand)
+Say something short like "Setting up the world..." (keep speech to 1-5 words during building)
 
-PHASE 3: PLACE ASSETS ONE BY ONE
+STEP 4: BUILD — ASSETS
 For EVERY object:
 1. search_toolbox with a keyword
 2. insert_asset with the best result AND a specific position
 3. call get_properties on the inserted object to check its actual position and size
 4. If it landed in the wrong spot, use set_properties or run_code to reposition it
 
-IMPORTANT: After placing every 3-4 objects, call get_scene_summary to review the scene and make sure things look right. Reposition anything that's overlapping or out of place.
+IMPORTANT: After placing every 3-4 objects, call get_scene_summary to review the scene. Reposition anything that's overlapping or out of place.
 
-PHASE 4: ADD GAMEPLAY
+STEP 5: BUILD — GAMEPLAY
 - create_script for interactivity (vehicle systems, collectibles, combat, scoreboards)
-- Audio: search_toolbox for "background music" or ambient sounds
+- search_toolbox for background music or ambient sounds
+
+STEP 6: DONE — ASK FOR FEEDBACK
+When finished, tell the user what you built and ask if they want changes:
+"Your [game name] is ready! Want me to change anything or add more stuff?"
 
 ASSET RULES:
 - NEVER use run_code or create_instance to build objects without calling search_toolbox first
@@ -55,33 +81,37 @@ POSITIONING RULES:
 - After inserting, use get_properties to check the object's Position and Size — toolbox models have unpredictable sizes. If a model is enormous, scale it down or reposition.
 
 <example>
-User: "Make me a racing game"
-Phase 1 - Layout plan: oval track at center, cars on starting line, scenery around edges
-Phase 2 - Environment: set_lighting bright daytime, set_atmosphere clear sky
-Phase 3 - Assets:
-  search_toolbox("race track") → insert_asset at "0,0,0" → get_properties to check size
-  search_toolbox("sports car") → insert_asset at "0,1,20" → get_properties to verify
-  search_toolbox("sports car") → insert_asset at "5,1,20" (next to first car)
-  get_scene_summary to review layout
-  search_toolbox("tree") → insert_asset at "50,0,0" (off track, scenery)
-  search_toolbox("tree") → insert_asset at "-50,0,0"
-  search_toolbox("traffic barrier") → insert_asset at "30,0,30" (track edge)
-Phase 4 - Gameplay: create_script for vehicle driving, lap counter
+User: "I want a racing game"
+Archie: "Awesome! A few quick questions, should it be a street race, a dirt track, or a futuristic neon race? And how many cars should there be?"
+User: "Street race with like 3 cars"
+Archie: "Love it! Here's the plan:
+
+Street Racer
+
+World: City streets, daytime, clear sky
+Main Objects: 3 race cars, road track, traffic cones, street lights, trees along the road
+Gameplay: Drive the car around the track, lap counter
+Audio: Racing engine sounds, background music
+
+Sound good? Say go and I'll start building!"
+User: "go"
+Archie: "On it!" → [starts building with tools]
 </example>
 
 <example>
-User: "Build a spooky haunted house game"
-Phase 1 - Layout plan: house at center, graveyard to left, forest behind, player spawns in front
-Phase 2 - Environment: set_lighting clockTime=0, low brightness, fog. set_atmosphere high density, dark
-Phase 3 - Assets:
-  search_toolbox("haunted house") → insert_asset at "0,0,0" → get_properties to check size
-  Move SpawnLocation to "0,3,40" (in front of house)
-  search_toolbox("gravestone") → insert_asset at "-30,0,10"
-  search_toolbox("dead tree") → insert_asset at "20,0,-20"
-  get_scene_summary to review
-  search_toolbox("ghost NPC") → insert_asset at "5,3,0" (near house entrance)
-  search_toolbox("fence") → insert_asset at "-20,0,20" (around graveyard)
-Phase 4 - Gameplay: create_script for jumpscare triggers, flashlight
+User: "Make me a scary game"
+Archie: "Ooh spooky! What kind of scary, haunted house, zombie survival, or dark forest? And should there be jumpscares?"
+User: "Haunted house with jumpscares"
+Archie: "Perfect! Here's the plan:
+
+Haunted House
+
+World: Nighttime, heavy fog, dark and creepy
+Main Objects: Haunted house, gravestones, dead trees, ghost NPCs, iron fence
+Gameplay: Explore the house with a flashlight, jumpscares when you enter rooms
+Audio: Spooky ambient sounds, jumpscare sound effects
+
+Sound good? Say go and I'll start building!"
 </example>`;
 
 let conversationHistory = [];
@@ -201,9 +231,31 @@ app.get("/status", (req, res) => {
   res.json({ status: "ok", pluginConnected });
 });
 
+// --- Game Plan State ---
+let currentPlan = null; // { name, world, objects, gameplay, audio, status }
+
+// Start endpoint — Archie greets the user
+app.post("/start", async (req, res) => {
+  conversationHistory = [];
+  currentPlan = null;
+  try {
+    const result = await agentLoop("Hi! I just opened Roblox Studio and I want to make a game.");
+    res.json(result);
+  } catch (err) {
+    console.error("Start error:", err);
+    res.status(500).json({ speech: "Hey! I'm Archie, let's build something awesome! What kind of game do you want to make?" });
+  }
+});
+
+// Get current plan
+app.get("/plan", (req, res) => {
+  res.json({ plan: currentPlan });
+});
+
 // Reset conversation history
 app.post("/reset", (req, res) => {
   conversationHistory = [];
+  currentPlan = null;
   res.json({ success: true });
 });
 
@@ -260,7 +312,37 @@ async function agentLoop(userMessage) {
       if (response.stop_reason === "end_turn") {
         const textBlock = response.content.find((b) => b.type === "text");
         const speech = textBlock ? textBlock.text : "Done!";
-        return { speech };
+
+        // Try to extract a game plan from the response
+        if (speech.includes("World:") && speech.includes("Main Objects:") && speech.includes("Gameplay:")) {
+          try {
+            const lines = speech.split("\n").map(l => l.trim()).filter(Boolean);
+            const worldIdx = lines.findIndex(l => l.startsWith("World:"));
+            const nameMatch = worldIdx > 0 ? { 1: lines[worldIdx - 1] } : null;
+            const worldMatch = speech.match(/World:\s*(.+)/);
+            const objectsMatch = speech.match(/Main Objects:\s*(.+)/);
+            const gameplayMatch = speech.match(/Gameplay:\s*(.+)/);
+            const audioMatch = speech.match(/Audio:\s*(.+)/);
+            currentPlan = {
+              name: nameMatch ? nameMatch[1] : "Untitled Game",
+              world: worldMatch ? worldMatch[1] : "",
+              objects: objectsMatch ? objectsMatch[1] : "",
+              gameplay: gameplayMatch ? gameplayMatch[1] : "",
+              audio: audioMatch ? audioMatch[1] : "",
+              status: "waiting_approval",
+            };
+            console.log("[plan] Saved plan:", currentPlan.name);
+          } catch (e) {
+            console.error("[plan] Failed to parse plan:", e);
+          }
+        }
+
+        // Update plan status when building starts
+        if (currentPlan && currentPlan.status === "waiting_approval" && iterations > 1) {
+          currentPlan.status = "building";
+        }
+
+        return { speech, plan: currentPlan };
       }
 
       // If Claude wants to use tools, execute them
@@ -287,6 +369,12 @@ async function agentLoop(userMessage) {
               continue;
             }
 
+            // Update plan status when building starts
+            if (currentPlan && currentPlan.status === "waiting_approval") {
+              currentPlan.status = "building";
+              console.log("[plan] Building started");
+            }
+
             // Route all tools to plugin
             const result = await executeToolViaPlugin(block.name, block.input);
             console.log(`[tool] ${block.name}(${JSON.stringify(block.input).slice(0, 100)}) → ${JSON.stringify(result).slice(0, 300)}`);
@@ -301,7 +389,8 @@ async function agentLoop(userMessage) {
       }
     }
 
-    return { speech: "Whew, that was a lot! Let me know what's next." };
+    if (currentPlan) currentPlan.status = "complete";
+    return { speech: "Whew, that was a lot! Let me know what's next.", plan: currentPlan };
   } catch (err) {
     // Roll back conversation history to prevent corrupted state
     conversationHistory.length = historyLengthBefore;

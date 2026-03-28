@@ -39,5 +39,16 @@ document.addEventListener("DOMContentLoaded", () => {
     micBtn.classList.remove("recording");
   });
 
+  // Archie greets the user on load
+  fetch("/start", { method: "POST" })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.speech) {
+        Chat.addMessage("assistant", data.speech);
+        VoiceOutput.speak(data.speech);
+      }
+    })
+    .catch((err) => console.error("Start error:", err));
+
   console.log("Archie app initialized");
 });
