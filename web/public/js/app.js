@@ -9,11 +9,9 @@ document.addEventListener("DOMContentLoaded", () => {
     buildStatus: "Tell Archie what to build",
   });
 
-  const waitForScenes = setInterval(() => {
-    if (window.Avatar && window.Diorama) {
-      clearInterval(waitForScenes);
-      window.Avatar.init();
-      window.Avatar.setState("idle");
+  const waitForDiorama = setInterval(() => {
+    if (window.Diorama) {
+      clearInterval(waitForDiorama);
       window.Diorama.init();
     }
   }, 50);
