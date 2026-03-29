@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -35,10 +37,22 @@ test("ambient background renders only the surface-specific blurred video", () =>
   );
 
   assert.match(html, /ambient-bg--landing/);
-  assert.match(html, /ambient-video ambient-video--landing/);
-  assert.match(html, /src="\/media\/archie-ambient-loop\.mp4"/);
+  assert.doesNotMatch(html, /ambient-video ambient-video--landing/);
+  assert.doesNotMatch(html, /src="\/media\/archie-ambient-loop\.mp4"/);
   assert.doesNotMatch(html, /ambient-fallback/);
   assert.doesNotMatch(html, /ambient-grain/);
   assert.doesNotMatch(html, /ambient-drift/);
   assert.doesNotMatch(html, /ambient-overlay/);
+});
+
+test("ambient background defers video rendering until after client mount", () => {
+  const source = readFileSync(
+    path.join(process.cwd(), "src/components/AmbientBackground.tsx"),
+    "utf8"
+  );
+
+  assert.match(source, /"use client";/);
+  assert.match(source, /const isMounted = useSyncExternalStore\(/);
+  assert.match(source, /\(\) => true,\s*\(\) => false/s);
+  assert.match(source, /config\.enableVideo && isMounted \?/);
 });

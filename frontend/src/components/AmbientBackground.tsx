@@ -1,3 +1,6 @@
+"use client";
+
+import { useSyncExternalStore } from "react";
 import {
   getAmbientBackgroundConfig,
   type AmbientSurface,
@@ -11,10 +14,15 @@ export default function AmbientBackground({
   surface,
 }: AmbientBackgroundProps) {
   const config = getAmbientBackgroundConfig(surface);
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   return (
     <div className={config.containerClassName} aria-hidden="true">
-      {config.enableVideo ? (
+      {config.enableVideo && isMounted ? (
         <video
           className={config.videoClassName}
           autoPlay

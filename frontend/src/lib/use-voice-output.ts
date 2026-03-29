@@ -40,6 +40,12 @@ export function useVoiceOutput() {
       stop();
 
       const { audio, visemes } = await getTTS(text);
+
+      if (!audio) {
+        setVisemes([]);
+        return;
+      }
+
       const objectUrl = createAudioObjectUrl(audio);
       const audioElement = new Audio(objectUrl);
 

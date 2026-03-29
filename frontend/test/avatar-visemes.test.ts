@@ -46,6 +46,12 @@ test("tts server falls back to Deepgram JSON audio when Azure speech credentials
   assert.match(serverSource, /return \{ audio, visemes: \[\] \}/);
 });
 
+test("tts returns a silent payload when no speech provider credentials are configured", () => {
+  assert.match(serverSource, /if \(!speechKey \|\| !speechRegion\)/);
+  assert.match(serverSource, /if \(!deepgramKey\) \{\s*return \{ audio: "", visemes: \[\] \};\s*\}/s);
+  assert.match(voiceOutputSource, /if \(!audio\) \{\s*setVisemes\(\[\]\);\s*return;\s*\}/s);
+});
+
 test("package.json includes avatar rendering and azure speech dependencies", () => {
   assert.match(packageJson, /"@react-three\/fiber"/);
   assert.match(packageJson, /"@react-three\/drei"/);

@@ -35,7 +35,7 @@ async function synthesizeSpeechWithDeepgram(text) {
   const deepgramKey = process.env.DEEPGRAM_API_KEY;
 
   if (!deepgramKey) {
-    throw new Error("Deepgram speech credentials are missing.");
+    return { audio: "", visemes: [] };
   }
 
   const ttsRes = await fetch("https://api.deepgram.com/v1/speak?model=aura-asteria-en", {
