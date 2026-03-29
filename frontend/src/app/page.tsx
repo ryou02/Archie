@@ -28,7 +28,7 @@ export default function Home() {
           <h1 className="hero-title">ARCHIE</h1>
           <p className="hero-copy">
             Describe the game, shape the <span className="editorial-accent">vibe</span>,
-            and let Archie help creators turn ideas into playable Roblox worlds.
+            and let Archie help turn your ideas into playable Roblox worlds.
           </p>
         </div>
 

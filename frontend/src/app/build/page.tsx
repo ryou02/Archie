@@ -16,20 +16,9 @@ import {
   startSession,
   type Plan,
   type PlanSnapshot,
-  type TaskStep,
 } from "@/lib/api";
 import { useVoiceInput } from "@/lib/use-voice-input";
 import { useVoiceOutput } from "@/lib/use-voice-output";
-
-function getActiveTaskId(tasks: TaskStep[]): string | null {
-  const active = tasks.find((task) => task.status === "active");
-  if (active) {
-    return active.id;
-  }
-
-  const pending = tasks.find((task) => task.status !== "done");
-  return pending ? pending.id : tasks[0]?.id || null;
-}
 
 function appendAssistantMessage(history: ChatHistoryItem[], content: string) {
   return [...history, { type: "text", role: "assistant", content } satisfies ChatHistoryItem];
@@ -42,34 +31,15 @@ function appendUserMessage(history: ChatHistoryItem[], content: string) {
 export default function BuildPage() {
   const [history, setHistory] = useState<ChatHistoryItem[]>([]);
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [tasks, setTasks] = useState<TaskStep[]>([]);
-  const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeSession, setActiveSession] = useState<BuildSession | null>(null);
   const startedRef = useRef(false);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { speak, visemes, isPlaying, audioRef } = useVoiceOutput();
 
-  const syncTasks = useCallback((nextTasks: TaskStep[] | undefined) => {
-    const safeTasks = nextTasks || [];
-    setTasks(safeTasks);
-    setSelectedTask((current) => {
-      if (!safeTasks.length) {
-        return null;
-      }
-
-      if (current && safeTasks.some((task) => task.id === current)) {
-        return current;
-      }
-
-      return getActiveTaskId(safeTasks);
-    });
-  }, []);
-
   const applySnapshot = useCallback(
     (snapshot: PlanSnapshot) => {
       setPlan(snapshot.plan ?? null);
-      syncTasks(snapshot.taskPlan);
       setActiveSession(snapshot.activeBuildSession ?? null);
       setHistory((currentHistory) =>
         mergeArchivedBuildSessions(
@@ -78,7 +48,7 @@ export default function BuildPage() {
         )
       );
     },
-    [syncTasks]
+    []
   );
 
   const stopPlanPolling = useCallback(() => {
@@ -188,10 +158,6 @@ export default function BuildPage() {
     },
   });
 
-  const overallProgress = tasks.length
-    ? Math.round(tasks.reduce((sum, task) => sum + task.progress, 0) / tasks.length)
-    : 0;
-
   return (
     <div className="relative h-screen overflow-hidden">
       <AmbientBackground surface="build" />
@@ -211,15 +177,9 @@ export default function BuildPage() {
           <div className="workspace-chat glass-shell glass-shell--chat flex flex-col">
             <ChatPanel
               history={history}
-              tasks={tasks}
-              overallProgress={overallProgress}
-              selectedTaskId={selectedTask}
               plan={plan}
               activeSession={activeSession}
               onSend={handleSend}
-              onSelectTask={(task) =>
-                setSelectedTask(task.id === selectedTask ? null : task.id)
-              }
               onToggleSession={(sessionId) =>
                 setHistory((currentHistory) =>
                   toggleBuildSessionExpanded(currentHistory, sessionId)

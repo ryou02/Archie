@@ -102,13 +102,16 @@ test("avatar stage stays borderless without a rectangular overlay frame", () => 
   assert.doesNotMatch(globalsCss, /\.workspace-avatar::after\s*\{/s);
 });
 
-test("chat panel owns the build progress and approval summary surfaces", () => {
-  assert.match(chatPanel, /tasks:\s*TaskStep\[]/);
-  assert.match(chatPanel, /selectedTaskId\?: string \| null/);
-  assert.match(chatPanel, /overallProgress/);
-  assert.match(chatPanel, /Build Progress/);
+test("chat panel keeps the approval summary in-chat without rendering a separate top progress pane", () => {
   assert.match(chatPanel, /waiting_approval/);
+  assert.doesNotMatch(chatPanel, /Build Progress/);
   assert.doesNotMatch(buildPage, /workspace-summary glass-shell glass-shell--panel absolute/);
+});
+
+test("chat panel removes the top chat title bar and its divider", () => {
+  assert.doesNotMatch(chatPanel, /chat-panel__header/);
+  assert.doesNotMatch(chatPanel, />\s*Chat\s*</);
+  assert.doesNotMatch(globalsCss, /\.chat-panel__header\s*\{/s);
 });
 
 test("chat composer nests the mic inside the input shell and uses an arrow-only send control", () => {
@@ -119,6 +122,8 @@ test("chat composer nests the mic inside the input shell and uses an arrow-only 
   assert.match(chatPanel, /btn-send btn-send--icon/);
   assert.match(chatPanel, /aria-label="Send message"/);
   assert.match(chatPanel, /aria-hidden="true"/);
+  assert.match(chatPanel, /<svg[\s\S]*className="icon-send"[\s\S]*fill="none"/);
+  assert.match(chatPanel, /<path[\s\S]*fill="currentColor"/);
   assert.doesNotMatch(chatPanel, />\s*Send\s*</);
 });
 
@@ -143,6 +148,9 @@ test("composer CSS keeps the old pill treatment while compacting the controls", 
     globalsCss,
     /\.btn-mic--inline\s*\{[^}]*min-width:\s*2\.75rem;[^}]*border-radius:\s*999px;/s
   );
+  assert.doesNotMatch(globalsCss, /\.icon-send::before/s);
+  assert.doesNotMatch(globalsCss, /\.icon-send::after/s);
+  assert.doesNotMatch(globalsCss, /\.icon-send path/s);
 });
 
 test("avatar scene avoids generic bounds fitting and uses explicit framing transforms", () => {

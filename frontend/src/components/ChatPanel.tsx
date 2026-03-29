@@ -2,20 +2,14 @@
 
 import { useState, useRef, useEffect, useSyncExternalStore } from "react";
 import BuildSessionCard from "@/components/BuildSessionCard";
-import ProgressBar from "@/components/ProgressBar";
-import TaskList from "@/components/TaskList";
 import type { BuildSession, ChatHistoryItem } from "@/lib/build-history";
-import type { Plan, TaskStep } from "@/lib/api";
+import type { Plan } from "@/lib/api";
 
 interface ChatPanelProps {
   history: ChatHistoryItem[];
-  tasks: TaskStep[];
-  overallProgress: number;
-  selectedTaskId?: string | null;
   plan?: Plan | null;
   activeSession?: BuildSession | null;
   onSend: (text: string) => void;
-  onSelectTask?: (task: TaskStep) => void;
   onToggleSession?: (sessionId: string) => void;
   disabled?: boolean;
   planStatus?: string | null;
@@ -25,15 +19,27 @@ interface ChatPanelProps {
   onMicStop?: () => void;
 }
 
+function SendIcon() {
+  return (
+    <svg
+      className="icon-send"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        fill="currentColor"
+        d="M13.7 2.3a.75.75 0 0 0-.8-.15l-9.9 4a.75.75 0 0 0 .06 1.42l3.92 1.3 1.3 3.92a.75.75 0 0 0 1.42.06l4-9.9a.75.75 0 0 0-.15-.8Zm-5.56 6.14-2.65-.88 5.6-2.27-2.95 3.15Zm.3 2.06-.87-2.64 3.14-2.96-2.27 5.6Z"
+      />
+    </svg>
+  );
+}
+
 export default function ChatPanel({
   history,
-  tasks,
-  overallProgress,
-  selectedTaskId,
   plan,
   activeSession,
   onSend,
-  onSelectTask,
   onToggleSession,
   disabled,
   planStatus,
@@ -58,11 +64,8 @@ export default function ChatPanel({
     () => false
   );
   const currentPlanStatus = plan?.status ?? planStatus ?? null;
-  const selectedTask = selectedTaskId
-    ? tasks.find((task) => task.id === selectedTaskId) ?? null
-    : null;
   const showApprovalSummary = plan?.status === "waiting_approval";
-  const showMeta = tasks.length > 0 || showApprovalSummary;
+  const showMeta = showApprovalSummary;
 
   const effectiveMicSupported = hydrated && micSupported;
 
@@ -98,90 +101,10 @@ export default function ChatPanel({
     onMicStop?.();
   };
 
-  const statusChipStyles = {
-    background:
-      currentPlanStatus === "complete"
-        ? "rgba(61,245,167,0.12)"
-        : currentPlanStatus === "building"
-          ? "rgba(74,158,255,0.12)"
-          : "rgba(255,255,255,0.06)",
-    color:
-      currentPlanStatus === "complete"
-        ? "var(--aurora-green)"
-        : currentPlanStatus === "building"
-          ? "var(--aurora-blue)"
-          : currentPlanStatus === "waiting_approval"
-            ? "var(--aurora-teal)"
-            : "var(--text-muted)",
-    border: `1px solid ${
-      currentPlanStatus === "complete"
-        ? "rgba(61,245,167,0.15)"
-        : currentPlanStatus === "building"
-          ? "rgba(74,158,255,0.15)"
-          : currentPlanStatus === "waiting_approval"
-            ? "rgba(184,226,255,0.15)"
-            : "transparent"
-    }`,
-  } as const;
-
   return (
     <div className="chat-panel flex h-full flex-col">
-      <div className="chat-panel__header shrink-0 px-5 py-3">
-        <span className="nav-label">Chat</span>
-      </div>
-
       {showMeta ? (
         <div className="chat-panel__meta shrink-0 px-4 py-4">
-          {tasks.length > 0 ? (
-            <div className="chat-panel__section">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <span className="nav-label">Build Progress</span>
-                <span
-                  className="text-[10px] font-mono font-bold px-2 py-0.5"
-                  style={statusChipStyles}
-                >
-                  {currentPlanStatus === "complete"
-                    ? "DONE"
-                    : currentPlanStatus === "building"
-                      ? "BUILDING"
-                      : currentPlanStatus === "waiting_approval"
-                        ? "PLANNING"
-                        : "IDLE"}
-                </span>
-              </div>
-
-              <div className="mb-3 flex items-center gap-3">
-                <ProgressBar percent={overallProgress} />
-                <span
-                  className="shrink-0 text-xs font-mono font-bold"
-                  style={{ color: "var(--ambient-edge-bright)" }}
-                >
-                  {overallProgress}%
-                </span>
-              </div>
-
-              <TaskList
-                tasks={tasks}
-                selectedId={selectedTaskId}
-                onSelect={onSelectTask}
-              />
-
-              {selectedTask ? (
-                <div className="chat-panel__task-detail mt-3 p-3">
-                  <h4
-                    className="mb-1 text-xs font-bold"
-                    style={{ fontFamily: "var(--font-display)" }}
-                  >
-                    {selectedTask.label}
-                  </h4>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    {selectedTask.detail || "Waiting to start..."}
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
           {showApprovalSummary && plan ? (
             <div className="chat-panel__section">
               <h3
@@ -325,7 +248,7 @@ export default function ChatPanel({
           aria-label="Send message"
           title="Send message"
         >
-          <span className="icon-send" aria-hidden="true" />
+          <SendIcon />
         </button>
       </div>
     </div>
