@@ -20,7 +20,6 @@ export default function BuildPage() {
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Start session on mount
   useEffect(() => {
     if (initialized) return;
     setInitialized(true);
@@ -49,153 +48,210 @@ export default function BuildPage() {
       if (data.taskPlan) setTasks(data.taskPlan);
     } catch (err) {
       console.error(err);
-      setMessages((prev) => [...prev, { role: "assistant", content: "Oops, something went wrong!" }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Oops, something went wrong!" },
+      ]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Overall progress
   const overallProgress = tasks.length
     ? Math.round(tasks.reduce((sum, t) => sum + t.progress, 0) / tasks.length)
     : 0;
 
   return (
-    <div className="flex flex-col h-screen" style={{ background: "var(--ink)" }}>
-      {/* Top bar */}
+    <div className="relative h-screen overflow-hidden">
+      {/* Aurora background — full screen */}
+      <div className="aurora-bg" />
+      <div className="aurora-streaks" />
+      <div className="stars" />
+
+      {/* Top bar — minimal, floating */}
       <header
-        className="flex items-center justify-between px-6 py-3 shrink-0"
+        className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-3"
         style={{
-          background: "var(--surface)",
-          borderBottom: "1px solid var(--surface3)",
+          background: "linear-gradient(180deg, rgba(5,8,16,0.7) 0%, transparent 100%)",
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, var(--blue), var(--teal))" }}
+            className="w-7 h-7 flex items-center justify-center"
+            style={{
+              background: "rgba(61,245,167,0.12)",
+              border: "1px solid rgba(61,245,167,0.20)",
+            }}
           >
-            <span className="text-white text-sm font-black">A</span>
+            <span
+              className="text-xs font-black"
+              style={{
+                fontFamily: "var(--font-display)",
+                color: "var(--aurora-green)",
+              }}
+            >
+              A
+            </span>
           </div>
-          <span className="nav-label">Archie</span>
+          <span
+            className="text-sm font-semibold tracking-wide"
+            style={{
+              fontFamily: "var(--font-display)",
+              color: "var(--text-primary)",
+              letterSpacing: "0.08em",
+            }}
+          >
+            ARCHIE
+          </span>
         </div>
 
         {/* Center progress */}
         {tasks.length > 0 && (
-          <div className="flex-1 max-w-md mx-8">
-            <ProgressBar percent={overallProgress} />
+          <div className="flex-1 max-w-xs mx-8">
+            <div className="flex items-center gap-3">
+              <ProgressBar percent={overallProgress} />
+              <span
+                className="text-xs font-mono font-bold shrink-0"
+                style={{ color: "var(--aurora-green)" }}
+              >
+                {overallProgress}%
+              </span>
+            </div>
           </div>
         )}
 
-        <div className="flex items-center gap-4">
-          <StatusDot />
-        </div>
+        <StatusDot />
       </header>
 
-      {/* Main content */}
-      <div className="flex flex-1 min-h-0">
-        {/* Chat — left side */}
+      {/* Task overlay — top left when building */}
+      {tasks.length > 0 && (
         <div
-          className="flex flex-col"
-          style={{
-            flex: tasks.length > 0 ? "1 1 0%" : "1 1 100%",
-            background: "var(--surface)",
-            borderRight: tasks.length > 0 ? "1px solid var(--surface3)" : "none",
-            transition: "flex var(--t-slow)",
-          }}
+          className="absolute top-14 left-4 z-20 w-64 game-panel p-4 overflow-y-auto"
+          style={{ maxHeight: "50vh" }}
         >
-          {/* Plan card */}
-          {plan && plan.status === "waiting_approval" && (
-            <div
-              className="mx-5 mt-4 p-4 rounded-xl"
+          <div className="flex items-center justify-between mb-3">
+            <span className="nav-label">Build Progress</span>
+            <span
+              className="text-[10px] font-mono font-bold px-2 py-0.5"
               style={{
-                background: "var(--surface2)",
-                border: "1px solid var(--blue-border)",
+                background:
+                  plan?.status === "complete"
+                    ? "rgba(61,245,167,0.12)"
+                    : plan?.status === "building"
+                    ? "rgba(74,158,255,0.12)"
+                    : "var(--surface2)",
+                color:
+                  plan?.status === "complete"
+                    ? "var(--aurora-green)"
+                    : plan?.status === "building"
+                    ? "var(--aurora-blue)"
+                    : "var(--text-muted)",
+                border: `1px solid ${
+                  plan?.status === "complete"
+                    ? "rgba(61,245,167,0.15)"
+                    : plan?.status === "building"
+                    ? "rgba(74,158,255,0.15)"
+                    : "transparent"
+                }`,
               }}
             >
-              <h3 className="font-bold text-base mb-2">{plan.name}</h3>
-              <div className="flex flex-col gap-1 text-sm" style={{ color: "var(--fog)" }}>
-                <p><span className="font-semibold" style={{ color: "var(--text-primary)" }}>World:</span> {plan.world}</p>
-                <p><span className="font-semibold" style={{ color: "var(--text-primary)" }}>Objects:</span> {plan.objects}</p>
-                {plan.characters && (
-                  <p><span className="font-semibold" style={{ color: "var(--text-primary)" }}>Characters:</span> {plan.characters}</p>
-                )}
-                <p><span className="font-semibold" style={{ color: "var(--text-primary)" }}>Gameplay:</span> {plan.gameplay}</p>
-                <p><span className="font-semibold" style={{ color: "var(--text-primary)" }}>Audio:</span> {plan.audio}</p>
-              </div>
-            </div>
-          )}
+              {plan?.status === "complete"
+                ? "DONE"
+                : plan?.status === "building"
+                ? "BUILDING"
+                : plan?.status === "waiting_approval"
+                ? "PLANNING"
+                : "IDLE"}
+            </span>
+          </div>
 
-          <ChatPanel
-            messages={messages}
-            onSend={handleSend}
-            disabled={loading}
-            planStatus={plan?.status}
+          <TaskList
+            tasks={tasks}
+            selectedId={selectedTask}
+            onSelect={(t) => setSelectedTask(t.id === selectedTask ? null : t.id)}
           />
-        </div>
 
-        {/* Task sidebar — right side, only shows when we have tasks */}
-        {tasks.length > 0 && (
-          <div
-            className="w-80 shrink-0 flex flex-col overflow-y-auto p-4"
-            style={{ background: "var(--surface2)" }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="nav-label">Build Progress</span>
-              <span
-                className="text-xs font-mono font-bold px-2 py-1 rounded-md"
-                style={{
-                  background:
-                    plan?.status === "complete"
-                      ? "var(--teal-dim)"
-                      : plan?.status === "building"
-                      ? "var(--blue-dim)"
-                      : "var(--surface3)",
-                  color:
-                    plan?.status === "complete"
-                      ? "var(--teal)"
-                      : plan?.status === "building"
-                      ? "var(--blue)"
-                      : "var(--fog)",
-                }}
-              >
-                {plan?.status === "complete"
-                  ? "DONE"
-                  : plan?.status === "building"
-                  ? "BUILDING"
-                  : plan?.status === "waiting_approval"
-                  ? "PLANNING"
-                  : "IDLE"}
-              </span>
-            </div>
-
-            <TaskList
-              tasks={tasks}
-              selectedId={selectedTask}
-              onSelect={(t) => setSelectedTask(t.id === selectedTask ? null : t.id)}
-            />
-
-            {/* Selected task detail */}
-            {selectedTask && (() => {
+          {selectedTask &&
+            (() => {
               const task = tasks.find((t) => t.id === selectedTask);
               if (!task) return null;
               return (
                 <div
-                  className="mt-4 p-4 rounded-xl"
+                  className="mt-3 p-3"
                   style={{
                     background: "var(--surface)",
-                    border: "1px solid var(--surface3)",
+                    borderTop: "1px solid var(--panel-divider)",
                   }}
                 >
-                  <h4 className="font-bold text-sm mb-1">{task.label}</h4>
-                  <p className="text-xs" style={{ color: "var(--fog)" }}>
+                  <h4
+                    className="font-bold text-xs mb-1"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
+                    {task.label}
+                  </h4>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                     {task.detail || "Waiting to start..."}
                   </p>
                 </div>
               );
             })()}
+        </div>
+      )}
+
+      {/* Plan card overlay — bottom left */}
+      {plan && plan.status === "waiting_approval" && (
+        <div
+          className="absolute bottom-6 left-6 z-20 game-panel p-5 max-w-md"
+        >
+          <h3
+            className="font-bold text-base mb-3"
+            style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
+          >
+            {plan.name}
+          </h3>
+          <div className="flex flex-col gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+            {[
+              { label: "World", value: plan.world, color: "var(--aurora-green)" },
+              { label: "Objects", value: plan.objects, color: "var(--aurora-teal)" },
+              ...(plan.characters ? [{ label: "Characters", value: plan.characters, color: "var(--aurora-blue)" }] : []),
+              { label: "Gameplay", value: plan.gameplay, color: "var(--aurora-purple)" },
+              { label: "Audio", value: plan.audio, color: "var(--aurora-blue)" },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="flex gap-2 py-1"
+                style={{ borderBottom: "1px solid var(--panel-divider)" }}
+              >
+                <span className="font-semibold shrink-0 w-20" style={{ color: item.color }}>
+                  {item.label}
+                </span>
+                <span>{item.value}</span>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Right panel — Chat — 80% height, square, game-UI */}
+      <div
+        className="absolute right-4 z-20 flex flex-col"
+        style={{
+          top: "10%",
+          height: "80%",
+          width: "360px",
+          background: "var(--panel-bg)",
+          backdropFilter: "blur(20px) saturate(1.2)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.2)",
+          border: "1px solid var(--panel-border)",
+          /* square — no border-radius */
+        }}
+      >
+        <ChatPanel
+          messages={messages}
+          onSend={handleSend}
+          disabled={loading}
+          planStatus={plan?.status}
+        />
       </div>
     </div>
   );

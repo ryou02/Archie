@@ -6,63 +6,113 @@ export default function Home() {
   const router = useRouter();
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center relative overflow-hidden"
-      style={{ background: "linear-gradient(180deg, #EBF5FF 0%, #DDE8F5 40%, #E5F0FA 100%)" }}>
+    <div className="flex flex-1 flex-col items-center justify-center relative min-h-screen overflow-hidden">
+      {/* Aurora background */}
+      <div className="aurora-bg" />
+      <div className="aurora-streaks" />
+      <div className="stars" />
 
-      {/* Soft radial glow */}
-      <div className="absolute inset-0 pointer-events-none"
+      {/* Ground / horizon glow */}
+      <div
+        className="fixed bottom-0 left-0 right-0 h-[50vh] pointer-events-none z-[1]"
         style={{
-          background: "radial-gradient(circle at 50% 60%, rgba(74,138,212,0.08) 0%, transparent 50%)"
-        }} />
+          background:
+            "radial-gradient(ellipse 100% 40% at 50% 100%, rgba(61,245,167,0.06) 0%, transparent 60%), radial-gradient(ellipse 60% 30% at 50% 100%, rgba(74,158,255,0.04) 0%, transparent 50%)",
+        }}
+      />
 
-      {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center gap-6 text-center px-6">
-        {/* Logo / Title */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-2"
-            style={{ background: "linear-gradient(135deg, var(--blue), var(--teal))" }}>
-            <span className="text-white text-3xl font-black">A</span>
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center gap-8 text-center px-6">
+        {/* Logo mark */}
+        <div className="relative">
+          <div
+            className="w-20 h-20 rounded-2xl flex items-center justify-center"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(61,245,167,0.18), rgba(74,158,255,0.12))",
+              border: "1px solid rgba(61,245,167,0.25)",
+              boxShadow: "0 0 50px rgba(61,245,167,0.12), 0 0 100px rgba(61,245,167,0.05)",
+            }}
+          >
+            <span
+              className="text-3xl font-black"
+              style={{
+                fontFamily: "var(--font-display)",
+                background: "linear-gradient(135deg, var(--aurora-green), var(--aurora-teal))",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              A
+            </span>
           </div>
-          <h1 className="text-5xl font-black tracking-tight"
-            style={{ color: "var(--text-primary)", letterSpacing: "-0.03em" }}>
-            ARC<span style={{ color: "var(--blue)" }}>HIE</span>
+          {/* Glow behind logo */}
+          <div
+            className="absolute -inset-4 rounded-3xl -z-10"
+            style={{
+              background: "radial-gradient(circle, rgba(61,245,167,0.08) 0%, transparent 70%)",
+            }}
+          />
+        </div>
+
+        {/* Title */}
+        <div className="flex flex-col items-center gap-4">
+          <h1
+            className="text-7xl font-black tracking-tight"
+            style={{
+              fontFamily: "var(--font-display)",
+              letterSpacing: "-0.04em",
+              background:
+                "linear-gradient(160deg, #ffffff 0%, rgba(232,236,244,0.85) 40%, var(--aurora-green) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              textShadow: "0 0 60px rgba(61,245,167,0.15)",
+            }}
+          >
+            ARCHIE
           </h1>
-          <p className="text-base mt-1" style={{ color: "var(--fog)" }}>
-            Build Roblox games with your voice.
+          <p
+            className="text-lg font-light tracking-wide"
+            style={{
+              fontFamily: "var(--font-body)",
+              color: "var(--text-secondary)",
+              letterSpacing: "0.08em",
+            }}
+          >
+            Build Roblox games with your voice
           </p>
         </div>
 
-        {/* CTA Button */}
+        {/* CTA */}
         <button
           onClick={() => router.push("/build")}
-          className="mt-4 px-10 py-4 rounded-xl text-white font-bold text-sm tracking-wide cursor-pointer"
+          className="btn-primary mt-6 text-base px-12 py-4"
           style={{
-            background: "linear-gradient(135deg, var(--blue), #3a7ac4)",
-            border: "1px solid rgba(74,138,212,0.3)",
-            boxShadow: "0 8px 32px rgba(74,138,212,0.25), inset 0 1px 0 rgba(255,255,255,0.15)",
-            transition: "transform var(--t-fast), box-shadow var(--t-fast)",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            fontFamily: "var(--font-mono)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow = "0 12px 40px rgba(74,138,212,0.35), inset 0 1px 0 rgba(255,255,255,0.15)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 8px 32px rgba(74,138,212,0.25), inset 0 1px 0 rgba(255,255,255,0.15)";
+            boxShadow: "0 0 30px rgba(61,245,167,0.12), 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)",
           }}
         >
           Start Building
         </button>
       </div>
 
-      {/* Bottom decorative wave */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
-        style={{
-          background: "linear-gradient(180deg, transparent, rgba(74,138,212,0.06))"
-        }} />
+      {/* Model silhouette area */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-[2] pointer-events-none">
+        <div
+          className="w-[300px] h-[400px] relative"
+          style={{
+            background: "radial-gradient(ellipse 60% 80% at 50% 60%, rgba(61,245,167,0.04) 0%, transparent 70%)",
+          }}
+        >
+          {/* Subtle ground reflection */}
+          <div
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[200px] h-[3px] rounded-full"
+            style={{
+              background: "radial-gradient(ellipse, rgba(61,245,167,0.20) 0%, transparent 70%)",
+              boxShadow: "0 0 20px rgba(61,245,167,0.08)",
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }

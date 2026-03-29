@@ -33,30 +33,39 @@ export default function ChatPanel({ messages, onSend, disabled, planStatus }: Ch
 
   return (
     <div className="flex flex-col h-full">
+      {/* Header */}
+      <div
+        className="px-5 py-3 shrink-0"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+      >
+        <span className="nav-label">Chat</span>
+      </div>
+
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3"
+        className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3"
         style={{ overscrollBehavior: "contain" }}
       >
         {messages.map((msg, i) => (
           <div
             key={i}
-            className={`max-w-[88%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+            className={`max-w-[90%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
               msg.role === "user" ? "self-end" : "self-start"
             }`}
             style={{
               background:
                 msg.role === "user"
-                  ? "rgba(74,138,212,0.14)"
+                  ? "rgba(74,158,255,0.12)"
                   : "var(--surface)",
               border: `1px solid ${
                 msg.role === "user"
-                  ? "var(--blue-border)"
-                  : "rgba(0,0,0,0.04)"
+                  ? "rgba(74,158,255,0.18)"
+                  : "rgba(255,255,255,0.04)"
               }`,
               color: "var(--text-primary)",
               whiteSpace: "pre-wrap",
+              fontFamily: "var(--font-body)",
             }}
           >
             {msg.content}
@@ -64,17 +73,31 @@ export default function ChatPanel({ messages, onSend, disabled, planStatus }: Ch
         ))}
 
         {disabled && (
-          <div className="self-start flex items-center gap-2 px-4 py-3 rounded-2xl text-sm"
-            style={{ background: "var(--surface)", border: "1px solid rgba(0,0,0,0.04)", color: "var(--fog)" }}>
-            <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--blue)" }} />
-            {planStatus === "building" ? "Building..." : "Thinking..."}
+          <div
+            className="self-start flex items-center gap-2.5 px-4 py-3 rounded-2xl text-sm"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid rgba(255,255,255,0.04)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <div className="flex items-center gap-1">
+              <div className="typing-dot" />
+              <div className="typing-dot" />
+              <div className="typing-dot" />
+            </div>
+            <span className="text-xs">
+              {planStatus === "building" ? "Building..." : "Thinking..."}
+            </span>
           </div>
         )}
       </div>
 
       {/* Input */}
-      <div className="px-4 pb-4 pt-2 flex gap-2"
-        style={{ borderTop: "1px solid var(--surface3)" }}>
+      <div
+        className="px-4 pb-4 pt-3 flex gap-2"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+      >
         <input
           type="text"
           value={input}
@@ -82,19 +105,18 @@ export default function ChatPanel({ messages, onSend, disabled, planStatus }: Ch
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           placeholder="Tell Archie what to build..."
           disabled={disabled}
-          className="flex-1 px-4 py-3 rounded-xl text-sm outline-none"
+          className="flex-1 px-4 py-3 rounded-full text-sm outline-none"
           style={{
             background: "var(--surface2)",
-            border: "1px solid var(--surface3)",
+            border: "1px solid var(--glass-border)",
             color: "var(--text-primary)",
-            fontFamily: "var(--font-sans)",
+            fontFamily: "var(--font-body)",
           }}
         />
         <button
           onClick={handleSubmit}
           disabled={disabled || !input.trim()}
-          className="glass-btn px-4 py-3 font-bold"
-          style={{ opacity: disabled || !input.trim() ? 0.4 : 1 }}
+          className="btn-send"
         >
           Send
         </button>

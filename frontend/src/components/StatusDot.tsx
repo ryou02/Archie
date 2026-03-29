@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -25,7 +24,10 @@ export default function StatusDot() {
     <div className="flex items-center gap-2">
       <div
         className="w-2 h-2 rounded-full"
-        style={{ background: connected ? "var(--teal)" : "var(--fog-light)" }}
+        style={{
+          background: connected ? "var(--aurora-green)" : "var(--text-muted)",
+          boxShadow: connected ? "0 0 8px rgba(61,245,167,0.4)" : "none",
+        }}
       />
       <span className="nav-label">
         {connected ? "Studio Connected" : "Studio Offline"}

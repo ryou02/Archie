@@ -10,7 +10,7 @@ interface TaskListProps {
 
 export default function TaskList({ tasks, onSelect, selectedId }: TaskListProps) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       {tasks.map((task) => {
         const isSelected = selectedId === task.id;
         const isDone = task.status === "done";
@@ -20,52 +20,64 @@ export default function TaskList({ tasks, onSelect, selectedId }: TaskListProps)
           <button
             key={task.id}
             onClick={() => onSelect?.(task)}
-            className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-left cursor-pointer"
+            className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left cursor-pointer"
             style={{
               background: isSelected
-                ? "rgba(74,138,212,0.12)"
+                ? "rgba(61,245,167,0.08)"
                 : "var(--surface)",
-              border: `1px solid ${isSelected ? "var(--blue-border)" : "transparent"}`,
+              border: `1px solid ${
+                isSelected ? "rgba(61,245,167,0.15)" : "transparent"
+              }`,
               transition: "background var(--t-fast), border-color var(--t-fast)",
             }}
           >
-            <div className="flex items-center gap-3 min-w-0">
-              {/* Status dot */}
+            <div className="flex items-center gap-2.5 min-w-0">
               <div
-                className="w-2.5 h-2.5 rounded-full shrink-0"
+                className="w-2 h-2 rounded-full shrink-0"
                 style={{
                   background: isDone
-                    ? "var(--teal)"
+                    ? "var(--aurora-green)"
                     : isActive
-                    ? "var(--blue)"
+                    ? "var(--aurora-blue)"
                     : "var(--surface3)",
+                  boxShadow: isDone
+                    ? "0 0 6px rgba(61,245,167,0.3)"
+                    : isActive
+                    ? "0 0 6px rgba(74,158,255,0.3)"
+                    : "none",
                 }}
               />
               <span
-                className="text-sm font-semibold truncate"
-                style={{ color: isDone ? "var(--fog)" : "var(--text-primary)" }}
+                className="text-xs font-medium truncate"
+                style={{
+                  fontFamily: "var(--font-body)",
+                  color: isDone ? "var(--text-muted)" : "var(--text-primary)",
+                }}
               >
                 {task.label}
               </span>
             </div>
 
-            {/* Progress */}
             <div className="flex items-center gap-2 shrink-0">
-              <div className="progress-bar w-16" style={{ height: 6 }}>
+              <div className="progress-bar w-12" style={{ height: 4 }}>
                 <div
                   className="progress-fill"
                   style={{
                     width: `${task.progress}%`,
                     background: isDone
-                      ? "var(--teal)"
-                      : "linear-gradient(90deg, var(--blue), var(--teal))",
+                      ? "var(--aurora-green)"
+                      : "linear-gradient(90deg, var(--aurora-green), var(--aurora-teal))",
                   }}
                 />
               </div>
               <span
-                className="text-xs font-mono font-bold w-8 text-right"
+                className="text-[10px] font-mono font-bold w-7 text-right"
                 style={{
-                  color: isDone ? "var(--teal)" : isActive ? "var(--blue)" : "var(--fog-light)",
+                  color: isDone
+                    ? "var(--aurora-green)"
+                    : isActive
+                    ? "var(--aurora-blue)"
+                    : "var(--text-muted)",
                 }}
               >
                 {task.progress}%
