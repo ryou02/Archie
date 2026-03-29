@@ -7,4 +7,9 @@ const Api = {
     });
     return res.json();
   },
+
+  async getPlan() {
+    const res = await fetch("/plan");
+    return res.json();
+  },
 };
