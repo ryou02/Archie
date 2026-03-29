@@ -8,7 +8,7 @@ export default function Home() {
   const router = useRouter();
 
   return (
-    <div className="landing-page relative flex min-h-screen flex-1 items-center justify-center overflow-hidden px-6 py-16">
+    <div className="landing-page relative flex min-h-screen flex-1 items-center justify-center overflow-hidden px-6 pt-28 pb-16">
       <AmbientBackground surface="landing" />
 
       <div className="landing-shell relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
