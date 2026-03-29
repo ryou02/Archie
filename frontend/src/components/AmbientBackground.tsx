@@ -16,7 +16,7 @@ export default function AmbientBackground({
     <div className={config.containerClassName} aria-hidden="true">
       {config.enableVideo ? (
         <video
-          className="ambient-video"
+          className={config.videoClassName}
           autoPlay
           loop
           muted
@@ -26,10 +26,6 @@ export default function AmbientBackground({
           <source src={config.videoSrc} type="video/mp4" />
         </video>
       ) : null}
-      <div className="ambient-fallback" />
-      <div className="ambient-drift" />
-      <div className="ambient-grain" />
-      <div className={config.overlayClassName} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-export const AMBIENT_BACKGROUND_VIDEO_SRC = "/media/ambient-loop.mp4";
+export const AMBIENT_BACKGROUND_VIDEO_SRC = "/media/archie-ambient-loop.mp4";
 
 export type AmbientSurface = "landing" | "build";
 
@@ -6,8 +6,8 @@ export interface AmbientBackgroundConfig {
   surface: AmbientSurface;
   enableVideo: boolean;
   videoSrc: string;
+  videoClassName: string;
   containerClassName: string;
-  overlayClassName: string;
 }
 
 const AMBIENT_BACKGROUND_CONFIG: Record<AmbientSurface, AmbientBackgroundConfig> = {
@@ -15,15 +15,15 @@ const AMBIENT_BACKGROUND_CONFIG: Record<AmbientSurface, AmbientBackgroundConfig>
     surface: "landing",
     enableVideo: true,
     videoSrc: AMBIENT_BACKGROUND_VIDEO_SRC,
+    videoClassName: "ambient-video ambient-video--landing",
     containerClassName: "ambient-bg ambient-bg--landing",
-    overlayClassName: "ambient-overlay ambient-overlay--hero",
   },
   build: {
     surface: "build",
     enableVideo: true,
     videoSrc: AMBIENT_BACKGROUND_VIDEO_SRC,
+    videoClassName: "ambient-video ambient-video--build",
     containerClassName: "ambient-bg ambient-bg--build",
-    overlayClassName: "ambient-overlay ambient-overlay--build",
   },
 };
 

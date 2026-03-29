@@ -75,114 +75,31 @@ body {
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 14%, rgba(227, 241, 255, 0.1), transparent 24%),
-    linear-gradient(180deg, #08111c 0%, #0a2034 42%, #07131f 100%);
-}
-
-.ambient-video,
-.ambient-fallback,
-.ambient-drift,
-.ambient-grain,
-.ambient-overlay {
-  position: absolute;
-  inset: 0;
+  background: #05070b;
 }
 
 .ambient-video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: blur(2px) saturate(0.94) brightness(0.76) contrast(1.06);
-  opacity: 0.26;
+  opacity: 1;
   transform: scale(1.02);
   animation: ambient-video-pan 28s ease-in-out infinite alternate;
 }
 
-.ambient-fallback {
-  background:
-    radial-gradient(circle at 20% 18%, rgba(205, 233, 255, 0.06), transparent 22%),
-    radial-gradient(circle at 78% 12%, rgba(205, 233, 255, 0.05), transparent 18%),
-    linear-gradient(180deg, rgba(7, 17, 29, 0.12) 0%, rgba(7, 17, 29, 0.5) 100%);
+.ambient-video--landing {
+  filter: blur(7px);
 }
 
-.ambient-drift,
-.ambient-drift::before,
-.ambient-drift::after {
-  content: "";
-  border-radius: 44%;
-  filter: blur(30px);
-}
-
-.ambient-drift {
-  inset: auto -18% 8% -18%;
-  height: 46%;
-  background:
-    radial-gradient(ellipse at 50% 50%, rgba(225, 241, 255, 0.1), transparent 44%),
-    radial-gradient(ellipse at 30% 58%, rgba(110, 171, 223, 0.1), transparent 34%),
-    radial-gradient(ellipse at 76% 52%, rgba(104, 158, 214, 0.08), transparent 34%);
-  animation: ambient-slide 40s ease-in-out infinite alternate;
-}
-
-.ambient-drift::before {
-  position: absolute;
-  inset: -10% 8% auto -6%;
-  height: 64%;
-  background:
-    radial-gradient(ellipse at 34% 48%, rgba(239, 247, 255, 0.07), transparent 28%),
-    radial-gradient(ellipse at 68% 44%, rgba(173, 210, 245, 0.06), transparent 24%);
-  animation: ambient-slide 52s ease-in-out infinite alternate-reverse;
-}
-
-.ambient-drift::after {
-  position: absolute;
-  inset: auto -8% 16% 12%;
-  height: 32%;
-  background:
-    radial-gradient(ellipse at 45% 50%, rgba(218, 239, 255, 0.08), transparent 38%),
-    radial-gradient(ellipse at 66% 40%, rgba(144, 198, 242, 0.06), transparent 28%);
-  animation: ambient-slide 46s ease-in-out infinite alternate;
-}
-
-.ambient-grain {
-  background-image:
-    radial-gradient(rgba(255, 255, 255, 0.08) 0.45px, transparent 0.7px),
-    radial-gradient(rgba(255, 255, 255, 0.04) 0.35px, transparent 0.6px);
-  background-size: 6px 6px, 11px 11px;
-  background-position: 0 0, 2px 4px;
-  mix-blend-mode: screen;
-  opacity: 0.09;
-  animation: ambient-static-shift 1.8s steps(6) infinite;
-}
-
-.ambient-overlay--hero {
-  background:
-    radial-gradient(ellipse 44% 28% at 50% 38%, rgba(236, 245, 255, 0.1), transparent 72%),
-    linear-gradient(180deg, rgba(7, 17, 29, 0.26) 0%, rgba(7, 17, 29, 0.02) 28%, rgba(7, 17, 29, 0.42) 100%);
-}
-
-.ambient-overlay--build {
-  background:
-    linear-gradient(90deg, rgba(7, 17, 29, 0.12) 0%, rgba(7, 17, 29, 0.04) 34%, rgba(7, 17, 29, 0.32) 100%),
-    radial-gradient(ellipse 36% 46% at 82% 48%, rgba(238, 245, 255, 0.08), transparent 72%);
-}
-
-@keyframes ambient-slide {
-  0% { transform: translate3d(-0.8%, 0, 0); }
-  100% { transform: translate3d(0.8%, 0, 0); }
+.ambient-video--build {
+  filter: blur(2px);
 }
 
 @keyframes ambient-video-pan {
   0% { transform: translate3d(-1.2%, 0, 0) scale(1.02); }
   100% { transform: translate3d(1.2%, 0, 0) scale(1.04); }
-}
-
-@keyframes ambient-static-shift {
-  0% { background-position: 0 0, 2px 4px; }
-  25% { background-position: 1px 2px, 4px 1px; }
-  50% { background-position: -2px 1px, 1px 5px; }
-  75% { background-position: 2px -1px, 5px 3px; }
-  100% { background-position: 0 0, 2px 4px; }
 }
 
 .glass-shell {

@@ -15,8 +15,8 @@ test("landing config enables video and uses hero readability overlays", () => {
   assert.equal(config.surface, "landing");
   assert.equal(config.enableVideo, true);
   assert.equal(config.videoSrc, AMBIENT_BACKGROUND_VIDEO_SRC);
+  assert.equal(config.videoClassName, "ambient-video ambient-video--landing");
   assert.match(config.containerClassName, /ambient-bg--landing/);
-  assert.match(config.overlayClassName, /ambient-overlay--hero/);
 });
 
 test("build config enables video and uses denser chrome readability overlays", () => {
@@ -24,19 +24,21 @@ test("build config enables video and uses denser chrome readability overlays", (
 
   assert.equal(config.surface, "build");
   assert.equal(config.enableVideo, true);
+  assert.equal(config.videoSrc, AMBIENT_BACKGROUND_VIDEO_SRC);
+  assert.equal(config.videoClassName, "ambient-video ambient-video--build");
   assert.match(config.containerClassName, /ambient-bg--build/);
-  assert.match(config.overlayClassName, /ambient-overlay--build/);
 });
 
-test("ambient background renders video and procedural overlay layers", () => {
+test("ambient background renders only the surface-specific blurred video", () => {
   const html = renderToStaticMarkup(
     React.createElement(AmbientBackground, { surface: "landing" })
   );
 
   assert.match(html, /ambient-bg--landing/);
-  assert.match(html, /ambient-video/);
-  assert.match(html, /ambient-fallback/);
-  assert.match(html, /ambient-grain/);
-  assert.match(html, /ambient-drift/);
-  assert.match(html, /ambient-overlay--hero/);
+  assert.match(html, /ambient-video ambient-video--landing/);
+  assert.match(html, /src="\/media\/archie-ambient-loop\.mp4"/);
+  assert.doesNotMatch(html, /ambient-fallback/);
+  assert.doesNotMatch(html, /ambient-grain/);
+  assert.doesNotMatch(html, /ambient-drift/);
+  assert.doesNotMatch(html, /ambient-overlay/);
 });
