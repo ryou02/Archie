@@ -136,6 +136,15 @@ Then ask 2-3 quick follow-up questions to understand their vision. Keep question
 
 Do NOT start building until you have enough info. Wait for the user to answer.
 
+WHEN THE USER ASKS TO FIX OR CHANGE EXISTING STUFF:
+If the user says "fix my moves", "change the character", "update the GUI", or anything about existing game content, you MUST read what's already there BEFORE making changes:
+1. get_scene_summary — see the full scene
+2. get_children("StarterGui") — see existing GUI (character selectors, menus, HUD, etc.)
+3. find_instances with className "Script" or "LocalScript" — find existing scripts
+4. read_script on every relevant script — understand the current logic
+5. get_children on relevant models — see what characters/NPCs exist and their structure
+Only THEN can you understand what needs fixing. The GUI often contains important context (character names, move names, button labels) that tells you what the game is about. NEVER guess — always read first.
+
 STEP 2: PRESENT THE PLAN
 Once you understand what they want, present a clear game plan. Format it like this (plain text only, no emojis, no markdown):
 
@@ -194,108 +203,45 @@ STEP 6: BUILD — GAMEPLAY
 - Put server scripts in ServerScriptService, local scripts in StarterPlayerScripts or StarterGui
 - Test each script individually after creating it — don't write 5 scripts then test
 
-SCRIPTING PATTERNS — use these proven patterns, don't improvise:
+SCRIPTING APPROACH — research first, then build:
+You can't have a template for every game type. Instead, follow this process for ANY gameplay feature:
 
-Tool/weapon that does something on click:
-  local tool = script.Parent -- Tool must be in StarterPack or Workspace
-  local handle = tool:FindFirstChild("Handle")
-  tool.Activated:Connect(function()
-    -- do the action here
-  end)
+1. RESEARCH what already exists in the game:
+   - get_scene_summary, get_children("StarterGui"), find_instances for Scripts/LocalScripts
+   - read_script on every relevant script to understand current logic
+   - The GUI often tells you what the game is about (character names, move names, etc.)
 
-Shooting/projectile:
-  -- Put a Tool in StarterPack with a Handle part inside it
-  local tool = script.Parent
-  tool.Activated:Connect(function()
-    local player = game.Players:GetPlayerFromCharacter(tool.Parent)
-    if not player then return end
-    local char = player.Character
-    local head = char:FindFirstChild("Head")
-    if not head then return end
-    local bullet = Instance.new("Part")
-    bullet.Size = Vector3.new(0.5, 0.5, 2)
-    bullet.CFrame = head.CFrame
-    bullet.Velocity = head.CFrame.LookVector * 200
-    bullet.Parent = workspace
-    bullet.Touched:Connect(function(hit)
-      if hit.Parent ~= char then
-        bullet:Destroy()
-      end
-    end)
-    game.Debris:AddItem(bullet, 3)
-  end)
+2. SEARCH THE TOOLBOX for working systems:
+   - search_toolbox for complete systems: "fighting system", "ability system", "vehicle system", "inventory system", "quest system", "pet system", etc.
+   - insert_asset the best result, then get_children and read_script on it to see how it works
+   - Adapt what you find rather than writing everything from scratch
+   - Also search for VFX/effects: "explosion VFX", "fire effect", "aura effect", "shockwave" — put these in ReplicatedStorage to clone at runtime
 
-Collectible/pickup:
-  local part = script.Parent
-  part.Touched:Connect(function(hit)
-    local player = game.Players:GetPlayerFromCharacter(hit.Parent)
-    if player then
-      local ls = player:FindFirstChild("leaderstats")
-      if ls and ls:FindFirstChild("Coins") then
-        ls.Coins.Value = ls.Coins.Value + 1
-      end
-      part:Destroy()
-    end
-  end)
+3. BUILD using Roblox fundamentals you already know:
+   - Server scripts go in ServerScriptService, local scripts in StarterPlayerScripts or StarterGui
+   - Client-to-server communication: RemoteEvents in ReplicatedStorage
+   - Player input: UserInputService (keybinds), Tool.Activated (click tools)
+   - Damage: Humanoid:TakeDamage(), check distance with .Magnitude
+   - VFX: clone from ReplicatedStorage, use game.Debris:AddItem() for cleanup
+   - Cooldowns: track with a table, use task.delay() to reset
+   - Leaderboards: leaderstats folder in Player
+   - GUI: build under game.StarterGui (NOT PlayerGui) — see GUI rules below
 
-Leaderboard/score setup (put in ServerScriptService):
-  game.Players.PlayerAdded:Connect(function(player)
-    local ls = Instance.new("Folder")
-    ls.Name = "leaderstats"
-    ls.Parent = player
-    local coins = Instance.new("IntValue")
-    coins.Name = "Coins"
-    coins.Value = 0
-    coins.Parent = ls
-  end)
+CRITICAL SCRIPTING RULES:
+- run_code executes in PLUGIN context — no game.Players.LocalPlayer, no PlayerGui
+- run_code is for setup (creating instances, moving things). For runtime logic, use create_script.
+- Server Scripts: damage, data, spawning, game state
+- LocalScripts: input detection, GUI updates, camera, client effects
+- Connect them with RemoteEvents (client fires, server listens)
+- ALWAYS call find_instances/get_children to get EXACT object names before referencing them in scripts. Never guess names.
+- Test each script individually — don't write 5 scripts then test
 
-Vehicle seat (make sure VehicleSeat exists in the model):
-  -- No script needed if using VehicleSeat — player just sits in it and WASD drives
-  -- But if the model has no VehicleSeat, add one via run_code:
-  -- local seat = Instance.new("VehicleSeat"); seat.Parent = workspace.CarModel; seat.Position = workspace.CarModel.PrimaryPart.Position
-
-NPC that chases player:
-  local npc = script.Parent
-  local humanoid = npc:FindFirstChildOfClass("Humanoid")
-  while true do
-    local closest = nil
-    local closestDist = 50
-    for _, player in game.Players:GetPlayers() do
-      local char = player.Character
-      if char and char:FindFirstChild("HumanoidRootPart") then
-        local dist = (char.HumanoidRootPart.Position - npc:GetPivot().Position).Magnitude
-        if dist < closestDist then
-          closest = char
-          closestDist = dist
-        end
-      end
-    end
-    if closest and humanoid then
-      humanoid:MoveTo(closest.HumanoidRootPart.Position)
-    end
-    task.wait(0.5)
-  end
-
-GUI (health bar, score display, ammo counter, etc.) — use run_code to create ScreenGui:
-  -- Put this in a LocalScript in StarterPlayerScripts
-  local player = game.Players.LocalPlayer
-  local gui = Instance.new("ScreenGui")
-  gui.Parent = player.PlayerGui
-  local label = Instance.new("TextLabel")
-  label.Size = UDim2.new(0, 200, 0, 50)
-  label.Position = UDim2.new(0.5, -100, 0, 10)
-  label.BackgroundTransparency = 0.5
-  label.BackgroundColor3 = Color3.new(0, 0, 0)
-  label.TextColor3 = Color3.new(1, 1, 1)
-  label.Font = Enum.Font.GothamBold
-  label.TextSize = 24
-  label.Text = "Score: 0"
-  label.Parent = gui
-
-Give guns to player (put Tools in StarterPack so players spawn with them):
-  -- After creating a Tool with a Handle, move it to StarterPack
-  local tool = ServerStorage:FindFirstChild("Pistol")
-  if tool then tool.Parent = game.StarterPack end
+GUI RULES:
+- Build GUI tree with run_code, parented to game.StarterGui (NOT PlayerGui)
+- Add interactivity with create_script (LocalScript parented to the ScreenGui)
+- Inside LocalScripts you CAN use game.Players.LocalPlayer and PlayerGui
+- For complex GUI: build the full tree in ONE run_code call
+- Use UDim2 for sizing, UIListLayout for lists, ScrollingFrame for scrollable content
 
 STEP 7: VERIFY — TEST THE GAME
 This step is critical. NEVER skip it. Before telling the user the game is done:
@@ -447,11 +393,19 @@ async function agentLoop(userMessage) {
       const MAX_HISTORY = 30;
       if (conversationHistory.length > MAX_HISTORY + 2) {
         let cutPoint = conversationHistory.length - MAX_HISTORY;
+        // Walk backward past tool_result messages so we don't orphan them
         while (cutPoint > 2 && cutPoint < conversationHistory.length) {
           const msg = conversationHistory[cutPoint];
           if (msg.role === "user" && Array.isArray(msg.content) && msg.content.some(b => b.type === "tool_result")) {
             cutPoint--;
           } else break;
+        }
+        // If cut lands right after an assistant tool_use, include the next tool_result too
+        if (cutPoint > 2) {
+          const prev = conversationHistory[cutPoint - 1];
+          if (prev.role === "assistant" && Array.isArray(prev.content) && prev.content.some(b => b.type === "tool_use")) {
+            cutPoint--;
+          }
         }
         const first2 = conversationHistory.slice(0, 2);
         const recent = conversationHistory.slice(cutPoint);
@@ -480,8 +434,8 @@ async function agentLoop(userMessage) {
       });
 
       const response = await anthropic.messages.create({
-        model: "claude-opus-4-6",
-        max_tokens: 4096,
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 8192,
         system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
         tools: cachedTools,
         messages: trimmedMessages,
@@ -496,7 +450,12 @@ async function agentLoop(userMessage) {
 
       if (assistantSpeech) syncPlanFromSpeech(assistantSpeech);
 
-      if (response.stop_reason === "end_turn") {
+      // Check if response contains tool_use blocks regardless of stop_reason.
+      // Claude may return tool_use with stop_reason "tool_use" OR "max_tokens"
+      // (if the response was cut off). Both need tool_result messages.
+      const hasToolUse = response.content.some((b) => b.type === "tool_use");
+
+      if (!hasToolUse && response.stop_reason === "end_turn") {
         const textBlock = response.content.find((b) => b.type === "text");
         const speech = textBlock ? textBlock.text : "Done!";
 
@@ -510,7 +469,7 @@ async function agentLoop(userMessage) {
         return { speech, plan: currentPlan, taskPlan: currentTaskPlan, activeBuildSession, archivedBuildSessions };
       }
 
-      if (response.stop_reason === "tool_use") {
+      if (hasToolUse) {
         usedToolsThisTurn = true;
         if (!activeBuildSession && currentPlan) {
           currentPlan.status = "building";
