@@ -8,8 +8,11 @@ import {
 } from "@/app/fonts";
 
 export const metadata: Metadata = {
-  title: "Archie — AI Game Builder",
+  title: "Archie",
   description: "Build Roblox games by talking to Archie",
+  icons: {
+    icon: "/logo-mark.png",
+  },
 };
 
 export default function RootLayout({
