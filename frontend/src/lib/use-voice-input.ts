@@ -119,18 +119,30 @@ export function useVoiceInput({ onTranscript, onError }: UseVoiceInputOptions) {
     [speechRecognitionCtor]
   );
 
-  const stopRecording = useCallback(() => {
-    pendingSocketErrorRef.current = false;
+  const disposeRecognition = useCallback((mode: "stop" | "abort" = "stop") => {
+    if (!recognitionRef.current) {
+      return;
+    }
 
-    if (recognitionRef.current) {
-      const recognition = recognitionRef.current;
+    const recognition = recognitionRef.current;
+
+    if (mode === "abort") {
       recognition.onstart = null;
       recognition.onresult = null;
       recognition.onerror = null;
       recognition.onend = null;
-      recognition.stop();
       recognitionRef.current = null;
+      recognition.abort();
+      return;
     }
+
+    recognition.stop();
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    pendingSocketErrorRef.current = false;
+
+    disposeRecognition();
 
     if (recorderRef.current && recorderRef.current.state !== "inactive") {
       recorderRef.current.stop();
@@ -146,10 +158,10 @@ export function useVoiceInput({ onTranscript, onError }: UseVoiceInputOptions) {
     }
 
     setState("idle");
-  }, []);
+  }, [disposeRecognition]);
 
   const startRecording = useCallback(async () => {
-    if (!supported || state !== "idle") {
+    if (!supported || state !== "idle" || recognitionRef.current) {
       return;
     }
 
@@ -179,6 +191,8 @@ export function useVoiceInput({ onTranscript, onError }: UseVoiceInputOptions) {
         };
 
         recognition.onerror = (event) => {
+          recognitionRef.current = null;
+          setState("idle");
           onError?.(createVoiceInputError(event));
         };
 
@@ -257,7 +271,26 @@ export function useVoiceInput({ onTranscript, onError }: UseVoiceInputOptions) {
     }
   }, [onError, onTranscript, speechRecognitionCtor, state, stopRecording, supported]);
 
-  useEffect(() => stopRecording, [stopRecording]);
+  useEffect(
+    () => () => {
+      pendingSocketErrorRef.current = false;
+      disposeRecognition("abort");
+
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
+        recorderRef.current.stop();
+      }
+      recorderRef.current = null;
+
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+      }
+    },
+    [disposeRecognition]
+  );
 
   return {
     supported,

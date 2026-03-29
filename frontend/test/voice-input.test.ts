@@ -55,3 +55,14 @@ test("voice input supports native browser speech recognition before Deepgram str
     /recognition\.onresult = \(event\) => \{[\s\S]*onTranscript\(transcript\)/s
   );
 });
+
+test("voice input keeps native speech recognition result handlers alive until stop completes", () => {
+  assert.doesNotMatch(
+    voiceInputSource,
+    /if \(recognitionRef\.current\) \{[\s\S]*recognition\.onresult = null[\s\S]*recognition\.stop\(\)/s
+  );
+  assert.doesNotMatch(
+    voiceInputSource,
+    /if \(recognitionRef\.current\) \{[\s\S]*recognition\.onend = null[\s\S]*recognition\.stop\(\)/s
+  );
+});
