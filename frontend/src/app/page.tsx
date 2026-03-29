@@ -1,14 +1,48 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import AmbientBackground from "@/components/AmbientBackground";
 
+const LANDING_FADE_MS = 280;
+const BUILD_ROUTE = "/build";
+
 export default function Home() {
   const router = useRouter();
+  const [isLeaving, setIsLeaving] = useState(false);
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (leaveTimerRef.current) {
+        clearTimeout(leaveTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleStartBuilding = () => {
+    if (isLeaving) {
+      return;
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      router.push(BUILD_ROUTE);
+      return;
+    }
+
+    setIsLeaving(true);
+    leaveTimerRef.current = setTimeout(() => {
+      router.push(BUILD_ROUTE);
+    }, LANDING_FADE_MS);
+  };
 
   return (
-    <div className="landing-page relative flex min-h-screen flex-1 items-center justify-center overflow-hidden px-6 pt-28 pb-16">
+    <div
+      className={`landing-page relative flex min-h-screen flex-1 items-center justify-center overflow-hidden px-6 pt-28 pb-16${
+        isLeaving ? " landing-page--leaving" : ""
+      }`}
+    >
       <AmbientBackground surface="landing" />
 
       <div className="landing-shell relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
@@ -33,8 +67,9 @@ export default function Home() {
         </div>
 
         <button
-          onClick={() => router.push("/build")}
+          onClick={handleStartBuilding}
           className="btn-primary mt-8 text-base"
+          disabled={isLeaving}
         >
           Start Building
         </button>

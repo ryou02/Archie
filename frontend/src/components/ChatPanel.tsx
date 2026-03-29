@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useSyncExternalStore } from "react";
+import { useRef, useEffect, useSyncExternalStore } from "react";
 import BuildSessionCard from "@/components/BuildSessionCard";
 import type { BuildSession, ChatHistoryItem } from "@/lib/build-history";
 import type { Plan } from "@/lib/api";
@@ -9,6 +9,8 @@ interface ChatPanelProps {
   history: ChatHistoryItem[];
   plan?: Plan | null;
   activeSession?: BuildSession | null;
+  inputValue: string;
+  onInputChange: (value: string) => void;
   onSend: (text: string) => void;
   onToggleSession?: (sessionId: string) => void;
   disabled?: boolean;
@@ -39,6 +41,8 @@ export default function ChatPanel({
   history,
   plan,
   activeSession,
+  inputValue,
+  onInputChange,
   onSend,
   onToggleSession,
   disabled,
@@ -48,7 +52,6 @@ export default function ChatPanel({
   onMicStart,
   onMicStop,
 }: ChatPanelProps) {
-  const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldStickRef = useRef(true);
 
@@ -82,22 +85,23 @@ export default function ChatPanel({
   };
 
   const handleSubmit = () => {
-    const text = input.trim();
+    const text = inputValue.trim();
     if (!text || disabled) return;
-    setInput("");
+    onInputChange("");
     onSend(text);
   };
 
-  const handleMicStart = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const handleMicClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     if (disabled || !effectiveMicSupported) {
       return;
     }
-    onMicStart?.();
-  };
 
-  const handleMicStop = (event: React.PointerEvent<HTMLButtonElement>) => {
-    event.preventDefault();
+    if (micState === "idle") {
+      onMicStart?.();
+      return;
+    }
+
     onMicStop?.();
   };
 
@@ -211,8 +215,8 @@ export default function ChatPanel({
         <div className="chat-input-shell flex flex-1 items-center gap-2">
           <input
             type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            value={inputValue}
+            onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             placeholder="Tell Archie what to build..."
             disabled={disabled}
@@ -222,16 +226,15 @@ export default function ChatPanel({
             type="button"
             disabled={disabled || !effectiveMicSupported}
             className={`chat-input-action btn-mic btn-mic--inline ${micState !== "idle" ? "btn-mic--active" : ""}`}
-            onPointerDown={handleMicStart}
-            onPointerUp={handleMicStop}
-            onPointerLeave={handleMicStop}
-            onPointerCancel={handleMicStop}
-            aria-label="Hold to talk"
+            onClick={handleMicClick}
+            aria-label={micState === "idle" ? "Start voice input" : "Stop voice input"}
             title={
               effectiveMicSupported
-                ? micState === "recording"
-                  ? "Release to send"
-                  : "Hold to talk"
+                ? micState === "idle"
+                  ? "Start voice input"
+                  : micState === "recording"
+                    ? "Stop voice input"
+                    : "Voice input is starting"
                 : "Voice input unavailable"
             }
           >
@@ -243,7 +246,7 @@ export default function ChatPanel({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={disabled || !input.trim()}
+          disabled={disabled || !inputValue.trim()}
           className="btn-send btn-send--icon"
           aria-label="Send message"
           title="Send message"

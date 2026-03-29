@@ -127,6 +127,29 @@ test("chat composer nests the mic inside the input shell and uses an arrow-only 
   assert.doesNotMatch(chatPanel, />\s*Send\s*</);
 });
 
+test("voice transcripts feed the composer input instead of auto-sending", () => {
+  assert.match(buildPage, /const \[composerInput, setComposerInput\] = useState\(""\);/);
+  assert.match(
+    buildPage,
+    /onTranscript: \(text\) => \{[\s\S]*const transcript = text\.trim\(\);[\s\S]*setComposerInput\(transcript\);/s
+  );
+  assert.match(buildPage, /inputValue=\{composerInput\}/);
+  assert.match(buildPage, /onInputChange=\{setComposerInput\}/);
+  assert.doesNotMatch(buildPage, /onTranscript: \(text\) => \{[\s\S]*handleSend\(text\.trim\(\)\)/s);
+});
+
+test("chat panel uses a controlled composer input and click-to-toggle mic control", () => {
+  assert.match(chatPanel, /inputValue:\s*string;/);
+  assert.match(chatPanel, /onInputChange:\s*\(value:\s*string\)\s*=>\s*void;/);
+  assert.doesNotMatch(chatPanel, /const \[input, setInput\] = useState\(/);
+  assert.match(chatPanel, /value=\{inputValue\}/);
+  assert.match(chatPanel, /onChange=\{\(e\) => onInputChange\(e\.target\.value\)\}/);
+  assert.match(chatPanel, /const handleMicClick = \(event: React\.MouseEvent<HTMLButtonElement>\) => \{/);
+  assert.match(chatPanel, /if \(micState === "idle"\) \{\s*onMicStart\?\.\(\);\s*return;\s*\}/s);
+  assert.match(chatPanel, /onClick=\{handleMicClick\}/);
+  assert.doesNotMatch(chatPanel, /onPointerDown=\{handleMicStart\}/);
+});
+
 test("composer CSS supports an inline mic capsule and compact arrow send control", () => {
   assert.match(globalsCss, /\.chat-input-shell\s*\{/s);
   assert.match(globalsCss, /\.chat-input-control\s*\{/s);

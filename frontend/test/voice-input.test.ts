@@ -66,3 +66,18 @@ test("voice input keeps native speech recognition result handlers alive until st
     /if \(recognitionRef\.current\) \{[\s\S]*recognition\.onend = null[\s\S]*recognition\.stop\(\)/s
   );
 });
+
+test("voice input flushes Deepgram before closing the websocket on stop", () => {
+  assert.match(
+    voiceInputSource,
+    /socketRef\.current && socketRef\.current\.readyState === WebSocket\.OPEN/
+  );
+  assert.match(
+    voiceInputSource,
+    /socketRef\.current\.send\(JSON\.stringify\(\{ type: "CloseStream" \}\)\)/
+  );
+  assert.doesNotMatch(
+    voiceInputSource,
+    /const stopRecording = useCallback\(\(\) => \{[\s\S]*if \(socketRef\.current\) \{[\s\S]*socketRef\.current\.close\(\);[\s\S]*socketRef\.current = null;[\s\S]*setState/s
+  );
+});

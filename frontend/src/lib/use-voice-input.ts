@@ -152,12 +152,15 @@ export function useVoiceInput({ onTranscript, onError }: UseVoiceInputOptions) {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
 
-    if (socketRef.current) {
-      socketRef.current.close();
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ type: "CloseStream" }));
+    } else if (socketRef.current) {
+      const socket = socketRef.current;
       socketRef.current = null;
+      socket.close();
     }
 
-    setState("idle");
+    setState(socketRef.current ? "connecting" : "idle");
   }, [disposeRecognition]);
 
   const startRecording = useCallback(async () => {

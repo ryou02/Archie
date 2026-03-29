@@ -20,6 +20,8 @@ import {
 import { useVoiceInput } from "@/lib/use-voice-input";
 import { useVoiceOutput } from "@/lib/use-voice-output";
 
+const BUILD_REVEAL_MS = 480;
+
 function appendAssistantMessage(history: ChatHistoryItem[], content: string) {
   return [...history, { type: "text", role: "assistant", content } satisfies ChatHistoryItem];
 }
@@ -29,6 +31,8 @@ function appendUserMessage(history: ChatHistoryItem[], content: string) {
 }
 
 export default function BuildPage() {
+  const [isEntering, setIsEntering] = useState(true);
+  const [composerInput, setComposerInput] = useState("");
   const [history, setHistory] = useState<ChatHistoryItem[]>([]);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(false);
@@ -149,8 +153,9 @@ export default function BuildPage() {
     stopRecording,
   } = useVoiceInput({
     onTranscript: (text) => {
-      if (text.trim()) {
-        void handleSend(text.trim());
+      const transcript = text.trim();
+      if (transcript) {
+        setComposerInput(transcript);
       }
     },
     onError: (error) => {
@@ -158,13 +163,28 @@ export default function BuildPage() {
     },
   });
 
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setIsEntering(false);
+      return;
+    }
+
+    const enterTimer = setTimeout(() => {
+      setIsEntering(false);
+    }, BUILD_REVEAL_MS);
+
+    return () => {
+      clearTimeout(enterTimer);
+    };
+  }, []);
+
   return (
-    <div className="relative h-screen overflow-hidden">
+    <div className={`build-page relative h-screen overflow-hidden${isEntering ? " build-page--entering" : ""}`}>
       <AmbientBackground surface="build" />
 
       <div className="workspace-layout">
         <section className="workspace-stage">
-          <div className="workspace-avatar">
+          <div className={`workspace-avatar${isEntering ? " workspace-avatar--entering" : ""}`}>
             <AvatarExperience
               visemes={visemes}
               isPlaying={isPlaying}
@@ -174,11 +194,17 @@ export default function BuildPage() {
         </section>
 
         <aside className="workspace-rail">
-          <div className="workspace-chat glass-shell glass-shell--chat flex flex-col">
+          <div
+            className={`workspace-chat glass-shell glass-shell--chat flex flex-col${
+              isEntering ? " workspace-chat--entering" : ""
+            }`}
+          >
             <ChatPanel
               history={history}
               plan={plan}
               activeSession={activeSession}
+              inputValue={composerInput}
+              onInputChange={setComposerInput}
               onSend={handleSend}
               onToggleSession={(sessionId) =>
                 setHistory((currentHistory) =>
