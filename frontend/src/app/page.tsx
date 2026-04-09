@@ -61,7 +61,7 @@ export default function Home() {
           <p className="hero-kicker">Made for imaginative Roblox builders</p>
           <h1 className="hero-title">ARCHIE</h1>
           <p className="hero-copy">
-            Describe the game, shape the <span className="editorial-accent">vibe</span>,
+            Describe the game, shape the <span className="editorial-accent">vision</span>,
             and let Archie help turn your ideas into playable Roblox worlds.
           </p>
         </div>
